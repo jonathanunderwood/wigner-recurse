@@ -28,8 +28,10 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   double y, *rs;
   double nmin = two_nmin / 2.0, nmax = two_nmax / 2.0;
   int nmax_i = (two_nmax - two_nmin) / 2;
-  int ndim = nmax_i + 1, nminus_i, nplus_i, i;
+  int ndim = nmax_i + 1, nminus_i=0, nplus_i=nmax_i, i;
   int iter_up = 1, iter_down = 1;
+
+  printf ("-> %d %d\n", two_nmin, two_nmax);
 
   *psi = malloc (ndim * sizeof (double));
   if (*psi == NULL)
@@ -57,6 +59,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   if (fabs (y) > SMALL)
     {
       rs[0] = -X (nmin, params) / y;
+      printf("Trying LL98 Eq. 3\n");
 
       for (i = 1; i <= nmax_i; i++)
 	{
@@ -76,12 +79,14 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	  else
 	    {
 	      nminus_i = i;
+	      printf ("RARE ROUTE 3\n");
 	      break;
 	    }
 	}
     }
   else /* First term undefined and so can only iterate downwards from nplus. */
     {
+      printf("Failed LL98 Eq. 3\n");
       nminus_i = 0;
       iter_up = 0;
     }
@@ -91,9 +96,10 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
   if (fabs (y) > SMALL)
     {
-      double z = Z (nmax, params);
+      double z = 
+      printf("Trying LL98 Eq. 2\n");
 
-      rs[nmax_i] = -z / y;
+      rs[nmax_i] = Z (nmax, params) / y;
 
       for (i = nmax_i - 1; i >= 0; i--)
 	{
@@ -114,6 +120,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	  else
 	    {
 	      nplus_i = i;
+	      printf ("RARE ROUTE 2\n");
 	      break;
 	    }
 	}
@@ -122,6 +129,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
     {
       nplus_i = nmax_i;
       iter_down = 0;
+      printf("FAILED LL98 Eq. 2\n");
     }
 
   /* Generate psi(n_minus-k)/psi(n_minus) == Psi_minus(n) using LL98
@@ -251,7 +259,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
    first column of Table 1 of LL98. */
 typedef struct params_3j_j
 {
-  int two_j2, two_j3, two_m2, two_m3;
+  int two_j2, two_j3, two_m2, two_m3, two_jmin, two_jmax;
   double j2, j3, m2, m3;
 } params_3j_j;
 
@@ -334,13 +342,12 @@ static double
 single_val_3j_j (const void *params)
 {
   params_3j_j *p = (params_3j_j *) params;
-
-  if ((p->two_j2 != p->two_j3) || (p->two_m2 != -p->two_m3))
-    return 0.0;
-  else if (ODD ((p->two_j2 - p->two_m2) / 2))
-    return -1.0 / sqrt (p->two_j2 + 1);
+  double a = 1.0 / sqrt(p->two_jmin + 1.0);
+  
+  if (ODD ((p->two_jmin + p->two_m2 + p->two_m3) / 2))
+    return -a;
   else
-    return 1.0 / sqrt (p->two_j2 + 1);
+    return a;
 }
 
 void
@@ -351,10 +358,9 @@ wigner3j_family_j (const int two_j2, const int two_j3,
   params_3j_j p;
   int a = abs (two_j2 - two_j3);
   int b = abs (two_m2 + two_m3);
-  int c = two_j2 + two_j3;
-
+  
   *two_jmin = a > b ? a : b;
-  *two_jmax = c < b ? b : c;
+  *two_jmax = two_j2 + two_j3;
 
   p.two_j2 = two_j2;
   p.two_j3 = two_j3;
@@ -366,6 +372,9 @@ wigner3j_family_j (const int two_j2, const int two_j3,
   p.m2 = two_m2 / 2.0;
   p.m3 = two_m3 / 2.0;
 
+  p.two_jmin=*two_jmin;
+  p.two_jmax=*two_jmax;
+  
   LL98 (family, *two_jmin, *two_jmax, &p, X_3j_j, Y_3j_j, Z_3j_j,
 	normalize_3j_j, single_val_3j_j);
 }
