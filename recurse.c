@@ -78,17 +78,45 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	    rs[i] = -X (n, params) / denom;
 	  else
 	    {
-	      nminus_i = i;
-	      printf ("RARE ROUTE 3\n");
+	      nminus_i = i - 1;
+	      printf ("RARE ROUTE #1\n");
 	      break;
 	    }
 	}
+
+      /* Generate psi(n_minus-k)/psi(n_minus) == Psi_minus(n) using LL98
+	 Eq. 5'. Does nothing if nminus_i = inmin. */
+      for (i = 1; i <= nminus_i; i++)	/* k in Eq. 5' */
+	{
+	  int p;
+	  int idx = nminus_i - i;
+	  
+	  (*psi)[idx] = rs[nminus_i - 1];
+	  
+	  for (p = 2; p <= i; p++)
+	    (*psi)[idx] *= rs[nminus_i - p];
+	}
     }
-  else /* First term undefined and so can only iterate downwards from nplus. */
+  else 
     {
-      printf("Failed LL98 Eq. 3\n");
-      nminus_i = 0;
-      iter_up = 0;
+      double x = X (nmin, params);
+
+      if (fabs(x) < SMALL) 
+	{
+	  /* First term undefined (0/0) and so can only iterate downwards from nplus. */
+	  printf("Failed LL98 Eq. 3\n");
+	  nminus_i = 0;
+	  iter_up = 0;
+	}
+      else
+	{ 
+	  /* First term is infinity because psi(1) = 0. */
+	  (*psi)[0] = 1.0;
+	  (*psi)[1] = 0.0; 
+	  nminus_i = 1;
+	  printf ("First term infty in LL98 Eq. 3\n");
+	}
+      
     }
 
   /* Iterate LL98 Eq. 2 from nmax downwards, unless the first term is undefined. */
@@ -96,10 +124,9 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
   if (fabs (y) > SMALL)
     {
-      double z = 
       printf("Trying LL98 Eq. 2\n");
 
-      rs[nmax_i] = Z (nmax, params) / y;
+      rs[nmax_i] = - Z (nmax, params) / y;
 
       for (i = nmax_i - 1; i >= 0; i--)
 	{
@@ -119,43 +146,44 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	    rs[i] = -Z (n, params) / denom;
 	  else
 	    {
-	      nplus_i = i;
-	      printf ("RARE ROUTE 2\n");
+	      nplus_i = i+1;
+	      printf ("RARE ROUTE #2. nplus_i:%d nmax_i:%d denom:%g\n", nplus_i, nmax_i, denom);
 	      break;
 	    }
+	}
+      /* Generate psi(n_plus+k)/psi(n_plus) == Psi_plus(n) using LL98 Eq. 4'. Does
+	 nothing if nplus_i = nmax_i. */
+      for (i = 1; i <= nmax_i - nplus_i; i++)	/* k in Eq. 4' */
+	{
+	  int p;
+	  int idx = nplus_i + i;
+	  
+	  (*psi)[idx] = rs[nplus_i + 1];
+	  
+	  for (p = 2; p <= i; p++)
+	    (*psi)[idx] *= rs[nplus_i + p];
+	  
+	  printf("### %d  %g\n", i, (*psi)[idx]);
 	}
     }
   else /* First term undefined so can only iterate upwards from nminus. */
     {
-      nplus_i = nmax_i;
-      iter_down = 0;
-      printf("FAILED LL98 Eq. 2\n");
-    }
-
-  /* Generate psi(n_minus-k)/psi(n_minus) == Psi_minus(n) using LL98
-     Eq. 5'. Does nothing if nminus_i = inmin. */
-  for (i = 1; i <= nminus_i; i++)	/* k in Eq. 5' */
-    {
-      int p;
-      int idx = nminus_i - i;
-
-      (*psi)[idx] = rs[nminus_i - 1];
-
-      for (p = 2; p <= i; p++)
-	(*psi)[idx] *= rs[nminus_i - p];
-    }
-
-  /* Generate psi(n_plus+k)/psi(n_plus) == Psi_plus(n) using LL98 Eq. 4'. Does
-     nothing if nplus_i = nmax_i. */
-  for (i = 1; i <= nmax_i - nplus_i; i++)	/* k in Eq. 4' */
-    {
-      int p;
-      int idx = nplus_i + i;
-
-      (*psi)[idx] = rs[nplus_i + 1];
-
-      for (p = 2; p <= i; p++)
-	(*psi)[idx] *= rs[nplus_i + p];
+      double z = Z (nmax, params);
+      
+      if (fabs (z) < SMALL) 
+	{
+	  nplus_i = nmax_i;
+	  iter_down = 0;
+	  printf("FAILED LL98 Eq. 2\n");
+	}
+      else
+	{
+	  /* First term is infinity because psi(nmax - 1) = 0. */
+	  nplus_i = nmax_i - 1;
+	  (*psi)[nmax_i] = 1.0;
+	  (*psi)[nplus_i] = 0.0; 
+	  printf ("First term infty in LL98 Eq. 2\n");
+	}
     }
 
   free (rs);
@@ -163,35 +191,43 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   /* Iterate in the classical region using three term recursion LL98 Eq. 1.  */
   if (iter_up)			/* Iterate upwards from nminus, chosing nc=nplus. */
     {
+      double a;
+      printf("Iterating up\n");
+
       if (nminus_i == 0)	/* Then psi(nmin-2)=0 so  psi(nmin+1) = -Y(nmin)/X(nmin) */
 	{
 	  double x = X (nmin, params);
-
+	  
 	  if (fabs (x) > SMALL)
 	    {
-	      (*psi)[nminus_i] = 1.0;
+	      (*psi)[0] = 1.0;
 	      (*psi)[1] = -Y (nmin, params) / x;	/* Since psi(nmin-1)=0 */
-	      nminus_i = 1;	/* To start the iterations in the next loop at psi(2) */
+
+	      for (i = nminus_i + 2; i <= nplus_i; i++)
+		{
+		  double nn = nmin - 1.0 + i;	/* n - 1 */
+		  (*psi)[i] = -(Y (nn, params) * (*psi)[i - 1] +
+				Z (nn, params) * (*psi)[i - 2]) / X (nn, params);
+
+		  printf ("inner loop %d\n", i);
+		}
 	    }
-	  else			/* Unable to iterate upwards. */
+	  else		/* Unable to iterate upwards. */
 	    {
 	      iter_up = 0; // IS THIS BRANCH EVER TAKEN?
 	      printf ("RARE BRANCH ONE TAKEN!!\n");
 	    }
 	}
       else
-	(*psi)[nminus_i] = 1.0;
-    }
-
-  if (iter_up)
-    {
-      double a;
-
-      for (i = nminus_i + 1; i <= nplus_i; i++)
 	{
-	  double nn = nmin - 1.0 + i;	/* n - 1 */
-	  (*psi)[i] = -(Y (nn, params) * (*psi)[i - 1] +
-			Z (nn, params) * (*psi)[i - 2]) / X (nn, params);
+	  (*psi)[nminus_i] = 1.0;
+
+	  for (i = nminus_i + 1; i <= nplus_i; i++)
+	    {
+	      double nn = nmin - 1.0 + i;	/* n - 1 */
+	      (*psi)[i] = -(Y (nn, params) * (*psi)[i - 1] +
+			    Z (nn, params) * (*psi)[i - 2]) / X (nn, params);
+	    }
 	}
 
       /* Since we choose nc=nplus, Psi_plus(nc)=1, and we multiply
@@ -208,15 +244,26 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
   if (iter_down)		/* Iterate downwards from nplus, chosing nc=nminus. */
     {
+      double a;
+
+      printf("nplus_i: %d\n", nplus_i);
+
       if (nplus_i == nmax_i)	/* Then psi(nmax+2)=0 so psi(nmax-1) = -Y(nmin)/X(nmin) */
 	{
 	  double z = Z (nmax, params);
-
+	  
 	  if (fabs (z) > SMALL)
 	    {
 	      (*psi)[nplus_i] = 1.0;
 	      (*psi)[nmax_i - 1] = -Y (nmax, params) / z;
-	      nplus_i -= 1;	/* To start the iterations in the next loop at psi(nmax-2) */
+
+	      for (i = nplus_i - 2; i >= nminus_i; i--)
+		{
+		  double nn = nmin + 1.0 + i;	/* n + 1 */
+		  (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
+				Y (nn, params) * (*psi)[i + 1]) / Z (nn, params);
+		}
+
 	    }
 	  else			// Is this code branch ever taken?
 	    {
@@ -225,23 +272,21 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	    }
 	}
       else
-	(*psi)[nplus_i] = 1.0;
-    }
-
-  if (iter_down)
-    {
-      double a;
-
-      for (i = nplus_i - 1; i >= nminus_i; i--)
 	{
-	  double nn = nmin + 1.0 + i;	/* n + 1 */
-	  (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
-			Y (nn, params) * (*psi)[i + 1]) / Z (nn, params);
+	  (*psi)[nplus_i] = 1.0;
+
+	  for (i = nplus_i - 1; i >= nminus_i; i--)
+	    {
+	      double nn = nmin + 1.0 + i;	/* n + 1 */
+	      (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
+			    Y (nn, params) * (*psi)[i + 1]) / Z (nn, params);
+	    }
+	  
 	}
 
       /* Since we choose nc=nminus, Psi_minus(nc)=1, and we multiply
-         Psi_plus(nminus...nmax) by Psi_minus(nc)/Psi_plus(nc) ==
-         1/Psi_plus(n_plus) to give us Psi_minus(nminus...nmax). */
+	 Psi_plus(nminus...nmax) by Psi_minus(nc)/Psi_plus(nc) ==
+	 1/Psi_plus(n_plus) to give us Psi_minus(nminus...nmax). */
       a = 1.0 / (*psi)[nminus_i];
 
       for (i = nmax_i; i >= nminus_i; i--)
@@ -253,6 +298,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
   fprintf (stderr, "LL98: Could not iterate in either direction\n");
   exit (1);
+
 }
 
 /* Specific functions for calculation of 3j coefficients using j recurrsion -
@@ -283,7 +329,7 @@ B (const double j, const double j2, const double j3,
   double b = j2 * (j2 + 1.0) - j3 * (j3 + 1.0);
   double c = (m2 - m3) * j * (j + 1.0);
 
-  return (2 * j + 1.0) * (a * b - c);
+  return (2.0 * j + 1.0) * (a * b - c);
 }
 
 static double
@@ -308,14 +354,14 @@ Z_3j_j (const double j, const void *params)
 }
 
 static void
-normalize_3j_j (double *f, const double jmin, const int ijmax,
+normalize_3j_j (double *f, const double jmin, const int jmax_i,
 		const void *params)
 {
   params_3j_j *p = (params_3j_j *) params;
   double a = 0.0, phase;
   int i;
 
-  for (i = 0; i <= ijmax; i++)
+  for (i = 0; i <= jmax_i; i++)
     {
       double j = jmin + i;
       double ff = f[i];
@@ -329,13 +375,11 @@ normalize_3j_j (double *f, const double jmin, const int ijmax,
   else
     phase = 1.0;
 
-  if ((f[ijmax] / phase) < 0)
+  if ((f[jmax_i] / phase) < 0)
     a = -a;
 
-  for (i = 0; i <= ijmax; i++)
+  for (i = 0; i <= jmax_i; i++)
     f[i] *= a;
-
-  return;
 }
 
 static double
