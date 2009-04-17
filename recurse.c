@@ -147,43 +147,12 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	}
       /* Generate psi(n_plus+k)/psi(n_plus) == Psi_plus(n) using LL98 Eq. 4'. Does
 	 nothing if nplus_i = nmax_i. */
-/*       for (i = 1; i <= nmax_i - nplus_i; i++)	/\* k in Eq. 4' *\/ */
-/* 	{ */
-/* 	  int p; */
-/* 	  int idx = nplus_i + i; */
-	  
-/* 	  (*psi)[idx] = rs[nplus_i + 1]; */
-
-/* 	    for (p = 2; p <= i; p++) */
-/* 	      { */
-/* 		(*psi)[idx] *= rs[nplus_i + p]; */
-
-/* 		if ((*psi)[idx] < SMALL) */
-/* 		  break; */
-/* 	      } */
-
-/* 	    //printf("### %d  %g\n", i, (*psi)[idx]); */
-/* 	} */
-
-      
-      printf ("DING\n");
       if (nplus_i < nmax_i)
 	{
-/* 	  (*psi)[nmax_i] = rs[nplus_i+1]; */
-/* 	  for (i=nplus_i+2; i<=nmax_i; i++) */
-/* 	    (*psi)[nmax_i] *= rs[i]; */
-/* 	  for (i=nmax_i-1; i>=nplus_i+1; i--) */
-/* 	    (*psi)[i] = (*psi)[i+1] / rs[i+1]; */
-
 	  (*psi)[nplus_i+1] = rs[nplus_i+1];
 	  for (i=nplus_i+2; i<=nmax_i; i++)
 	    (*psi)[i] = (*psi)[i-1]*rs[i];
-	  
-
-
 	}
-
-
 
     }
   else /* First term undefined so can only iterate upwards from nminus. */
