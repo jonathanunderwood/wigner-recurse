@@ -84,15 +84,11 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
       /* Generate psi(n_minus-k)/psi(n_minus) == Psi_minus(n) using LL98
 	 Eq. 5'. Does nothing if nminus_i = inmin. */
-      for (i = 1; i <= nminus_i; i++)	/* k in Eq. 5' */
+      if (nminus_i > 0)
 	{
-	  int p;
-	  int idx = nminus_i - i;
-	  printf("CRAPPY CODE\n");
-	  (*psi)[idx] = rs[nminus_i - 1];
-	  
-	  for (p = 2; p <= i; p++)
-	    (*psi)[idx] *= rs[nminus_i - p];
+	  (*psi)[nminus_i-1] = rs[nminus_i-1];
+	  for (i=nminus_i-2; i>=0; i--)
+	    (*psi)[i] = (*psi)[i+1]*rs[i];
 	}
     }
   else 
@@ -333,7 +329,7 @@ typedef struct params_3j_j
   double j2, j3, m2, m3;
 } params_3j_j;
 
-static double
+double
 A (const double j, const double j2, const double j3,
    const double m2, const double m3)
 {
@@ -345,7 +341,7 @@ A (const double j, const double j2, const double j3,
   return sqrt ((a - b * b) * (c * c - a) * (a - d * d));
 }
 
-static double
+double
 B (const double j, const double j2, const double j3,
    const double m2, const double m3)
 {
@@ -356,28 +352,28 @@ B (const double j, const double j2, const double j3,
   return (2.0 * j + 1.0) * (a * b - c);
 }
 
-static double
+double
 X_3j_j (const double j, const void *params)
 {
   params_3j_j *p = (params_3j_j *) params;
   return j * A (j + 1.0, p->j2, p->j3, p->m2, p->m3);
 }
 
-static double
+double
 Y_3j_j (const double j, const void *params)
 {
   params_3j_j *p = (params_3j_j *) params;
   return B (j, p->j2, p->j3, p->m2, p->m3);
 }
 
-static double
+double
 Z_3j_j (const double j, const void *params)
 {
   params_3j_j *p = (params_3j_j *) params;
   return (j + 1.0) * A (j, p->j2, p->j3, p->m2, p->m3);
 }
 
-static void
+void
 normalize_3j_j (double *f, const double jmin, const int jmax_i,
 		const void *params)
 {
@@ -406,7 +402,7 @@ normalize_3j_j (double *f, const double jmin, const int jmax_i,
     f[i] *= a;
 }
 
-static double
+double
 single_val_3j_j (const void *params)
 {
   params_3j_j *p = (params_3j_j *) params;
