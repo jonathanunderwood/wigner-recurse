@@ -31,8 +31,6 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   int ndim = nmax_i + 1, nminus_i=0, nplus_i=nmax_i, i;
   int iter_up = 1, iter_down = 1;
 
-  printf ("-> %d %d\n", two_nmin, two_nmax);
-
   *psi = malloc (ndim * sizeof (double));
   if (*psi == NULL)
     {
@@ -90,7 +88,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	{
 	  int p;
 	  int idx = nminus_i - i;
-	  
+	  printf("CRAPPY CODE\n");
 	  (*psi)[idx] = rs[nminus_i - 1];
 	  
 	  for (p = 2; p <= i; p++)
@@ -104,7 +102,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       if (fabs(x) < SMALL) 
 	{
 	  /* First term undefined (0/0) and so can only iterate downwards from nplus. */
-	  printf("Failed LL98 Eq. 3\n");
+	  //printf("Failed LL98 Eq. 3\n");
 	  nminus_i = 0;
 	  iter_up = 0;
 	}
@@ -124,7 +122,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
   if (fabs (y) > SMALL)
     {
-      printf("Trying LL98 Eq. 2\n");
+      //printf("Trying LL98 Eq. 2\n");
 
       rs[nmax_i] = - Z (nmax, params) / y;
 
@@ -153,18 +151,44 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	}
       /* Generate psi(n_plus+k)/psi(n_plus) == Psi_plus(n) using LL98 Eq. 4'. Does
 	 nothing if nplus_i = nmax_i. */
-      for (i = 1; i <= nmax_i - nplus_i; i++)	/* k in Eq. 4' */
+/*       for (i = 1; i <= nmax_i - nplus_i; i++)	/\* k in Eq. 4' *\/ */
+/* 	{ */
+/* 	  int p; */
+/* 	  int idx = nplus_i + i; */
+	  
+/* 	  (*psi)[idx] = rs[nplus_i + 1]; */
+
+/* 	    for (p = 2; p <= i; p++) */
+/* 	      { */
+/* 		(*psi)[idx] *= rs[nplus_i + p]; */
+
+/* 		if ((*psi)[idx] < SMALL) */
+/* 		  break; */
+/* 	      } */
+
+/* 	    //printf("### %d  %g\n", i, (*psi)[idx]); */
+/* 	} */
+
+      
+      printf ("DING\n");
+      if (nplus_i < nmax_i)
 	{
-	  int p;
-	  int idx = nplus_i + i;
+/* 	  (*psi)[nmax_i] = rs[nplus_i+1]; */
+/* 	  for (i=nplus_i+2; i<=nmax_i; i++) */
+/* 	    (*psi)[nmax_i] *= rs[i]; */
+/* 	  for (i=nmax_i-1; i>=nplus_i+1; i--) */
+/* 	    (*psi)[i] = (*psi)[i+1] / rs[i+1]; */
+
+	  (*psi)[nplus_i+1] = rs[nplus_i+1];
+	  for (i=nplus_i+2; i<=nmax_i; i++)
+	    (*psi)[i] = (*psi)[i-1]*rs[i];
 	  
-	  (*psi)[idx] = rs[nplus_i + 1];
-	  
-	  for (p = 2; p <= i; p++)
-	    (*psi)[idx] *= rs[nplus_i + p];
-	  
-	  printf("### %d  %g\n", i, (*psi)[idx]);
+
+
 	}
+
+
+
     }
   else /* First term undefined so can only iterate upwards from nminus. */
     {
@@ -215,7 +239,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	  else		/* Unable to iterate upwards. */
 	    {
 	      iter_up = 0; // IS THIS BRANCH EVER TAKEN?
-	      printf ("RARE BRANCH ONE TAKEN!!\n");
+	      ///printf ("RARE BRANCH ONE TAKEN!!\n");
 	    }
 	}
       else
