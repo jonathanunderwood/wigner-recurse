@@ -79,7 +79,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	  if (fabs (denom) > SMALL) // Check probably unecessary since else path
 				    // never taken?
 	    rs[i] = -X (n, params) / denom;
-	  else // Seems this path is never taken so this code could be simplified!
+	  else
 	    {
 	      nminus_i = i - 1;
 	      printf ("RARE ROUTE #1\n");
@@ -205,6 +205,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	    {
 	      iter_up = 0; // IS THIS BRANCH EVER TAKEN?
 	      printf ("RARE BRANCH ONE TAKEN!!\n");
+	      goto iterate_down;
 	    }
 	}
       else
@@ -213,30 +214,28 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	  start_i = nminus_i + 1;
 	}
 
-      if (iter_up) // this check not needed if the above rare branch is never taken
+      for (i = start_i; i <= nplus_i; i++)
 	{
-	  for (i = start_i; i <= nplus_i; i++)
-	    {
-	      double nn = nmin - 1.0 + i;	/* n - 1 */
-	      (*psi)[i] = -(Y (nn, params) * (*psi)[i - 1] +
-			    Z (nn, params) * (*psi)[i - 2]) / X (nn, params);
-		  if ((*psi)[i] > 1.0)
-		    printf("psi[i] > 1: %g\n", (*psi)[i]);
-	    }
-
-	  /* Since we choose nc=nplus, Psi_plus(nc)=1, and we multiply
-	     Psi_minus(nmin...nplus) by Psi_plus(nc)/Psi_minus(nc) ==
-	     1/Psi_minus(n_plus) to give us Psi_plus(nmin...nplus). */
-	  a = 1.0 / (*psi)[nplus_i];
-	  
-	  for (i = 0; i <= nplus_i; i++)
-	    (*psi)[i] *= a;
-	  
-	  normalize (*psi, nmin, nmax_i, params);
-	  return;
+	  double nn = nmin - 1.0 + i;	/* n - 1 */
+	  (*psi)[i] = -(Y (nn, params) * (*psi)[i - 1] +
+			Z (nn, params) * (*psi)[i - 2]) / X (nn, params);
+	  if ((*psi)[i] > 1.0)
+	    printf("psi[i] > 1: %g\n", (*psi)[i]);
 	}
+
+      /* Since we choose nc=nplus, Psi_plus(nc)=1, and we multiply
+	 Psi_minus(nmin...nplus) by Psi_plus(nc)/Psi_minus(nc) ==
+	 1/Psi_minus(n_plus) to give us Psi_plus(nmin...nplus). */
+      a = 1.0 / (*psi)[nplus_i];
+      
+      for (i = 0; i <= nplus_i; i++)
+	(*psi)[i] *= a;
+      
+      normalize (*psi, nmin, nmax_i, params);
+      return;
     }
 
+ iterate_down:
   if (iter_down) /* Iterate downwards from nplus, chosing nc = nminus. */
     {
       double a;
@@ -268,6 +267,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	    {
 	      iter_down = 0;
 	      printf ("RARE BRANCH TWO TAKEN!!\n");
+	      goto fail;
 	    }
 	}
       else
@@ -275,31 +275,29 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	  (*psi)[nplus_i] = 1.0;
 	  start_i = nplus_i - 1;
 	}
-      if (iter_down) // this check would be unecessary if the above RARE BRANCH
-		     // was never taken.
+
+      for (i = start_i; i >= nminus_i; i--)
 	{
-	  for (i = start_i; i >= nminus_i; i--)
-	    {
-	      double nn = nmin + 1.0 + i;	/* n + 1 */
-	      (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
-			    Y (nn, params) * (*psi)[i + 1]) / Z (nn, params);
-		  if ((*psi)[i] > 1.0)
-		    printf("psi[i] > 1: %g\n", (*psi)[i]);
-	    }
-	  
-	  /* Since we choose nc=nminus, Psi_minus(nc)=1, and we multiply
-	     Psi_plus(nminus...nmax) by Psi_minus(nc)/Psi_plus(nc) ==
-	     1/Psi_plus(n_plus) to give us Psi_minus(nminus...nmax). */
-	  a = 1.0 / (*psi)[nminus_i];
-	  
-	  for (i = nmax_i; i >= nminus_i; i--)
-	    (*psi)[i] *= a;
-	  
-	  normalize (*psi, nmin, nmax_i, params);
-	  return;
+	  double nn = nmin + 1.0 + i;	/* n + 1 */
+	  (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
+			Y (nn, params) * (*psi)[i + 1]) / Z (nn, params);
+	  if ((*psi)[i] > 1.0)
+	    printf("psi[i] > 1: %g\n", (*psi)[i]);
 	}
+	  
+      /* Since we choose nc=nminus, Psi_minus(nc)=1, and we multiply
+	 Psi_plus(nminus...nmax) by Psi_minus(nc)/Psi_plus(nc) ==
+	 1/Psi_plus(n_plus) to give us Psi_minus(nminus...nmax). */
+      a = 1.0 / (*psi)[nminus_i];
+      
+      for (i = nmax_i; i >= nminus_i; i--)
+	(*psi)[i] *= a;
+      
+      normalize (*psi, nmin, nmax_i, params);
+      return;
     }
 
+ fail:
   fprintf (stderr, "LL98: Could not iterate in either direction\n");
   exit (1);
 
