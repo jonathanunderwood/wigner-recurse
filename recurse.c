@@ -252,16 +252,6 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	      (*psi)[nplus_i] = 1.0;
 	      (*psi)[nmax_i - 1] = -Y (nmax, params) / z;
 	      start_i = nplus_i - 2;
-
-/* 	      for (i = nplus_i - 2; i >= nminus_i; i--) */
-/* 		{ */
-/* 		  double nn = nmin + 1.0 + i;	/\* n + 1 *\/ */
-/* 		  (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] + */
-/* 				Y (nn, params) * (*psi)[i + 1]) / Z (nn, params); */
-/* 		  if ((*psi)[i] > 1.0) */
-/* 		    printf("psi[i] > 1: %g\n", (*psi)[i]); */
-/* 		} */
-
 	    }
 	  else			// Seems to be never taken
 	    {
