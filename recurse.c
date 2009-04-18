@@ -1,3 +1,7 @@
+// TODO: remove rare branches if they're not used, and associated conditional
+// tests.
+// rename all _i to _idx.
+
 /* Functions for calculating angular momentum coupling coefficients using
    recurrsion relations. The algorithms used are those of Schulten and Gordon[1]
    augmented with the relations of Luscombe and Luben[2]. Commentary throughout
@@ -183,6 +187,8 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   if (iter_up) /* Iterate upwards from nminus, chosing nc = nplus. */
     {
       double a;
+      int start_i;
+
       printf("Iterating up\n");
 
       if (nminus_i == 0) /* Then psi(nmin - 2) = 0, so psi(nmin + 1) = -Y(nmin) / X(nmin) */
@@ -193,18 +199,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	    {
 	      (*psi)[0] = 1.0;
 	      (*psi)[1] = -Y (nmin, params) / x; /* Since psi(nmin - 1) = 0 */
-
-	      for (i = nminus_i + 2; i <= nplus_i; i++)
-		{
-		  double nn = nmin - 1.0 + i;	/* n - 1 */
-		  (*psi)[i] = -(Y (nn, params) * (*psi)[i - 1] +
-				Z (nn, params) * (*psi)[i - 2]) / X (nn, params);
-
-		  printf ("inner loop %d\n", i);
-		  if ((*psi)[i] > 1.0)
-		    printf("psi[i] > 1: %g\n", (*psi)[i]);
-		  
-		}
+	      start_i = nminus_i + 2;
 	    }
 	  else		/* Unable to iterate upwards. */
 	    {
@@ -215,8 +210,12 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       else
 	{
 	  (*psi)[nminus_i] = 1.0;
+	  start_i = nminus_i + 1;
+	}
 
-	  for (i = nminus_i + 1; i <= nplus_i; i++)
+      if (iter_up) // this check not needed if the above rare branch is never taken
+	{
+	  for (i = start_i; i <= nplus_i; i++)
 	    {
 	      double nn = nmin - 1.0 + i;	/* n - 1 */
 	      (*psi)[i] = -(Y (nn, params) * (*psi)[i - 1] +
@@ -224,23 +223,24 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 		  if ((*psi)[i] > 1.0)
 		    printf("psi[i] > 1: %g\n", (*psi)[i]);
 	    }
+
+	  /* Since we choose nc=nplus, Psi_plus(nc)=1, and we multiply
+	     Psi_minus(nmin...nplus) by Psi_plus(nc)/Psi_minus(nc) ==
+	     1/Psi_minus(n_plus) to give us Psi_plus(nmin...nplus). */
+	  a = 1.0 / (*psi)[nplus_i];
+	  
+	  for (i = 0; i <= nplus_i; i++)
+	    (*psi)[i] *= a;
+	  
+	  normalize (*psi, nmin, nmax_i, params);
+	  return;
 	}
-
-      /* Since we choose nc=nplus, Psi_plus(nc)=1, and we multiply
-         Psi_minus(nmin...nplus) by Psi_plus(nc)/Psi_minus(nc) ==
-         1/Psi_minus(n_plus) to give us Psi_plus(nmin...nplus). */
-      a = 1.0 / (*psi)[nplus_i];
-
-      for (i = 0; i <= nplus_i; i++)
-	(*psi)[i] *= a;
-
-      normalize (*psi, nmin, nmax_i, params);
-      return;
     }
 
   if (iter_down) /* Iterate downwards from nplus, chosing nc = nminus. */
     {
       double a;
+      int start_i;
 
       printf("nplus_i: %d\n", nplus_i);
 
@@ -252,15 +252,16 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	    {
 	      (*psi)[nplus_i] = 1.0;
 	      (*psi)[nmax_i - 1] = -Y (nmax, params) / z;
+	      start_i = nplus_i - 2;
 
-	      for (i = nplus_i - 2; i >= nminus_i; i--)
-		{
-		  double nn = nmin + 1.0 + i;	/* n + 1 */
-		  (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
-				Y (nn, params) * (*psi)[i + 1]) / Z (nn, params);
-		  if ((*psi)[i] > 1.0)
-		    printf("psi[i] > 1: %g\n", (*psi)[i]);
-		}
+/* 	      for (i = nplus_i - 2; i >= nminus_i; i--) */
+/* 		{ */
+/* 		  double nn = nmin + 1.0 + i;	/\* n + 1 *\/ */
+/* 		  (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] + */
+/* 				Y (nn, params) * (*psi)[i + 1]) / Z (nn, params); */
+/* 		  if ((*psi)[i] > 1.0) */
+/* 		    printf("psi[i] > 1: %g\n", (*psi)[i]); */
+/* 		} */
 
 	    }
 	  else			// Seems to be never taken
@@ -272,8 +273,12 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       else
 	{
 	  (*psi)[nplus_i] = 1.0;
-
-	  for (i = nplus_i - 1; i >= nminus_i; i--)
+	  start_i = nplus_i - 1;
+	}
+      if (iter_down) // this check would be unecessary if the above RARE BRANCH
+		     // was never taken.
+	{
+	  for (i = start_i; i >= nminus_i; i--)
 	    {
 	      double nn = nmin + 1.0 + i;	/* n + 1 */
 	      (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
@@ -282,18 +287,17 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 		    printf("psi[i] > 1: %g\n", (*psi)[i]);
 	    }
 	  
+	  /* Since we choose nc=nminus, Psi_minus(nc)=1, and we multiply
+	     Psi_plus(nminus...nmax) by Psi_minus(nc)/Psi_plus(nc) ==
+	     1/Psi_plus(n_plus) to give us Psi_minus(nminus...nmax). */
+	  a = 1.0 / (*psi)[nminus_i];
+	  
+	  for (i = nmax_i; i >= nminus_i; i--)
+	    (*psi)[i] *= a;
+	  
+	  normalize (*psi, nmin, nmax_i, params);
+	  return;
 	}
-
-      /* Since we choose nc=nminus, Psi_minus(nc)=1, and we multiply
-	 Psi_plus(nminus...nmax) by Psi_minus(nc)/Psi_plus(nc) ==
-	 1/Psi_plus(n_plus) to give us Psi_minus(nminus...nmax). */
-      a = 1.0 / (*psi)[nminus_i];
-
-      for (i = nmax_i; i >= nminus_i; i--)
-	(*psi)[i] *= a;
-
-      normalize (*psi, nmin, nmax_i, params);
-      return;
     }
 
   fprintf (stderr, "LL98: Could not iterate in either direction\n");
