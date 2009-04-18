@@ -72,9 +72,10 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	  n = nmin + i;
 	  denom = Y (n, params) + Z (n, params) * rs[i - 1];
 
-	  if (fabs (denom) > SMALL)
+	  if (fabs (denom) > SMALL) // Check probably unecessary since else path
+				    // never taken?
 	    rs[i] = -X (n, params) / denom;
-	  else
+	  else // Seems this path is never taken so this code could be simplified!
 	    {
 	      nminus_i = i - 1;
 	      printf ("RARE ROUTE #1\n");
@@ -83,7 +84,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	}
 
       /* Generate psi(n_minus-k)/psi(n_minus) == Psi_minus(n) using LL98
-	 Eq. 5'. Does nothing if nminus_i = inmin. */
+	 Eq. 5'. Does nothing if nminus_i = 0. */
       if (nminus_i > 0)
 	{
 	  (*psi)[nminus_i-1] = rs[nminus_i-1];
@@ -93,24 +94,23 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
     }
   else 
     {
+      /* If Y is zero there are two possibilities: 
+
+	 a) X != 0. In this case, first term s(nmin) is infinity because
+	 psi(nmin + 1) = 0. However, psi(nmin) is not nescessarily 0 in this
+	 case though. This implies we're actually in the classically allowed
+	 region at nmin, and so we can later use the 3 term recursion to iterate
+	 up from nmin.
+
+	 b) X = 0. In this case the first term is undefined, and we're unable to
+	 iterate upwards from nmin using either the 2 or 3 term recursions.
+      */
       double x = X (nmin, params);
 
+      nminus_i = 0;
+
       if (fabs(x) < SMALL) 
-	{
-	  /* First term undefined (0/0) and so can only iterate downwards from nplus. */
-	  //printf("Failed LL98 Eq. 3\n");
-	  nminus_i = 0;
-	  iter_up = 0;
-	}
-      else
-	{ 
-	  /* First term is infinity because psi(1) = 0. */
-	  (*psi)[0] = 1.0;
-	  (*psi)[1] = 0.0; 
-	  nminus_i = 1;
-	  printf ("First term infty in LL98 Eq. 3\n");
-	}
-      
+	iter_up = 0;
     }
 
   /* Iterate LL98 Eq. 2 from nmax downwards, unless the first term is undefined. */
@@ -118,7 +118,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
   if (fabs (y) > SMALL)
     {
-      //printf("Trying LL98 Eq. 2\n");
+      printf("Trying LL98 Eq. 2\n");
 
       rs[nmax_i] = - Z (nmax, params) / y;
 
@@ -140,11 +140,12 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	    rs[i] = -Z (n, params) / denom;
 	  else
 	    {
-	      nplus_i = i+1;
+	      nplus_i = i + 1;
 	      printf ("RARE ROUTE #2. nplus_i:%d nmax_i:%d denom:%g\n", nplus_i, nmax_i, denom);
 	      break;
 	    }
 	}
+
       /* Generate psi(n_plus+k)/psi(n_plus) == Psi_plus(n) using LL98 Eq. 4'. Does
 	 nothing if nplus_i = nmax_i. */
       if (nplus_i < nmax_i)
@@ -157,40 +158,41 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
     }
   else /* First term undefined so can only iterate upwards from nminus. */
     {
+      /* If Y is zero there are two possibilities: 
+
+	 a) Z != 0. In this case, first term r(nmax) is infinity because
+	 psi(nmax - 1) = 0. However, psi(nmax) is not nescessarily 0 in this
+	 case though. This implies we're actually in the classically allowed
+	 region at nmax, and so we can later use the 3 term recursion to iterate
+	 up from nmin.
+
+	 b) Z = 0. In this case the first term is undefined, and we're unable to
+	 iterate upwards from nmin using either the 2 or 3 term recursions.
+      */
       double z = Z (nmax, params);
       
+      nplus_i = nmax_i;
+
       if (fabs (z) < SMALL) 
-	{
-	  nplus_i = nmax_i;
 	  iter_down = 0;
-	  printf("FAILED LL98 Eq. 2\n");
-	}
-      else
-	{
-	  /* First term is infinity because psi(nmax - 1) = 0. */
-	  nplus_i = nmax_i - 1;
-	  (*psi)[nmax_i] = 1.0;
-	  (*psi)[nplus_i] = 0.0; 
-	  printf ("First term infty in LL98 Eq. 2\n");
-	}
     }
 
   free (rs);
 
   /* Iterate in the classical region using three term recursion LL98 Eq. 1.  */
-  if (iter_up)			/* Iterate upwards from nminus, chosing nc=nplus. */
+  if (iter_up) /* Iterate upwards from nminus, chosing nc = nplus. */
     {
       double a;
       printf("Iterating up\n");
 
-      if (nminus_i == 0)	/* Then psi(nmin-2)=0 so  psi(nmin+1) = -Y(nmin)/X(nmin) */
+      if (nminus_i == 0) /* Then psi(nmin - 2) = 0, so psi(nmin + 1) = -Y(nmin) / X(nmin) */
 	{
 	  double x = X (nmin, params);
 	  
 	  if (fabs (x) > SMALL)
 	    {
 	      (*psi)[0] = 1.0;
-	      (*psi)[1] = -Y (nmin, params) / x;	/* Since psi(nmin-1)=0 */
+	      (*psi)[1] = -Y (nmin, params) / x; /* Since psi(nmin - 1) = 0 */
 
 	      for (i = nminus_i + 2; i <= nplus_i; i++)
 		{
@@ -199,12 +201,15 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 				Z (nn, params) * (*psi)[i - 2]) / X (nn, params);
 
 		  printf ("inner loop %d\n", i);
+		  if ((*psi)[i] > 1.0)
+		    printf("psi[i] > 1: %g\n", (*psi)[i]);
+		  
 		}
 	    }
 	  else		/* Unable to iterate upwards. */
 	    {
 	      iter_up = 0; // IS THIS BRANCH EVER TAKEN?
-	      ///printf ("RARE BRANCH ONE TAKEN!!\n");
+	      printf ("RARE BRANCH ONE TAKEN!!\n");
 	    }
 	}
       else
@@ -216,6 +221,8 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	      double nn = nmin - 1.0 + i;	/* n - 1 */
 	      (*psi)[i] = -(Y (nn, params) * (*psi)[i - 1] +
 			    Z (nn, params) * (*psi)[i - 2]) / X (nn, params);
+		  if ((*psi)[i] > 1.0)
+		    printf("psi[i] > 1: %g\n", (*psi)[i]);
 	    }
 	}
 
@@ -231,13 +238,13 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       return;
     }
 
-  if (iter_down)		/* Iterate downwards from nplus, chosing nc=nminus. */
+  if (iter_down) /* Iterate downwards from nplus, chosing nc = nminus. */
     {
       double a;
 
       printf("nplus_i: %d\n", nplus_i);
 
-      if (nplus_i == nmax_i)	/* Then psi(nmax+2)=0 so psi(nmax-1) = -Y(nmin)/X(nmin) */
+      if (nplus_i == nmax_i) /* Then psi(nmax + 2) = 0 so psi(nmax-1) = -Y(nmin) / X(nmin) */
 	{
 	  double z = Z (nmax, params);
 	  
@@ -251,10 +258,12 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 		  double nn = nmin + 1.0 + i;	/* n + 1 */
 		  (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
 				Y (nn, params) * (*psi)[i + 1]) / Z (nn, params);
+		  if ((*psi)[i] > 1.0)
+		    printf("psi[i] > 1: %g\n", (*psi)[i]);
 		}
 
 	    }
-	  else			// Is this code branch ever taken?
+	  else			// Seems to be never taken
 	    {
 	      iter_down = 0;
 	      printf ("RARE BRANCH TWO TAKEN!!\n");
@@ -269,6 +278,8 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	      double nn = nmin + 1.0 + i;	/* n + 1 */
 	      (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
 			    Y (nn, params) * (*psi)[i + 1]) / Z (nn, params);
+		  if ((*psi)[i] > 1.0)
+		    printf("psi[i] > 1: %g\n", (*psi)[i]);
 	    }
 	  
 	}
@@ -388,6 +399,7 @@ wigner3j_family_j (const int two_j2, const int two_j3,
 		   const int two_m2, const int two_m3,
 		   double **family, int *two_jmin, int *two_jmax)
 {
+  // TODO: Add checking for vald inputs!
   params_3j_j p;
   int a = abs (two_j2 - two_j3);
   int b = abs (two_m2 + two_m3);

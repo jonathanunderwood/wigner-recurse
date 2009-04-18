@@ -129,7 +129,7 @@ check_3j_family_j_gsl (const int two_j1, const int two_j2,
 
   printf ("two_j1: %d two_j2: %d two_m1: %d two_m2: %d\n", 
 	  two_j1, two_j2, two_m1, two_m2);
-  printf ("--->%d\n", imax);
+
   for(i=0; i<=imax; i++)
     {
       int two_j3=two_jmin+i*2;
@@ -156,6 +156,12 @@ main ()
   check_3j_family_j_gsl (9, 8, -1, 0);
   check_3j_family_j_gsl (90, 80, -30, 10);
 
+  printf("These should all be NAN, since j is half integer, m is 0\n");
+  check_3j_family_j_gsl (99, 99, 0, 0);
+
+  check_3j_family_j_gsl (99, 99, 1, 1);
+
+  check_3j_family_j_gsl (100, 100, 0, 0);
 
   check_3j_family_j_exact(1e9);
 
