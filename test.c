@@ -31,7 +31,7 @@
 /* } */
 
 void
-check_3j_family_j_exact (const int two_jmax)
+check_3j_family_j_exact_1 (const int two_jmax)
 {
   int two_j;
 
@@ -47,14 +47,22 @@ check_3j_family_j_exact (const int two_jmax)
       printf ("two_j: %d\trecursive: % .18e\t exact: % .18e\tdiff: % .18e\n",
 	      two_j, a[0], exact, a[0]-exact);
 
-      printf ("two_j: %d\t calc: % .18e\t exact: % .18e\tdiff: % .18e\n",
+      printf ("two_j: %d\t gsl: % .18e\t exact: % .18e\tdiff: % .18e\n",
 	      two_j, gsl, exact, gsl-exact);
 
       
       free (a);
     }
+}
 
-  for (two_j = 0; two_j <=two_jmax; two_j = (two_j + 1)*100-1)
+void
+check_3j_family_j_exact_2 (const int two_jmax)
+{
+  int two_j;
+
+  printf("two_j\trecursive\tgsl\texact\trec-ex\tgsl-ex\n");
+
+  for (two_j = 0; two_j <=two_jmax; two_j = (two_j + 1)*100)
     {
       double exact = 1.0 / sqrt (two_j + 1.0);
       double gsl = gsl_sf_coupling_3j(two_j, two_j, 0, 0, 0, 0);
@@ -63,12 +71,7 @@ check_3j_family_j_exact (const int two_jmax)
 
       wigner3j_family_j (two_j, two_j, 0, 0, &a, &tjmax, &tjmin);
 
-      printf ("two_j: %d\trecursive: % .18e\t exact: % .18e\tdiff: % .18e\n",
-	      two_j, a[0], exact, a[0]-exact);
-
-      printf ("two_j: %d\t calc: % .18e\t exact: % .18e\tdiff: % .18e\n",
-	      two_j, gsl, exact, gsl-exact);
-
+      printf("%d\t%g\t%g\t%g\t%g\t%g\n", two_j, a[0],gsl, exact, a[0]-exact, gsl-exact);
       
       free (a);
     }
@@ -163,7 +166,8 @@ main ()
 
   check_3j_family_j_gsl (100, 100, 0, 0);
 
-  check_3j_family_j_exact(1e9);
+  //  check_3j_family_j_exact_1(1e9);
+  check_3j_family_j_exact_2(10000);
 
 /*   free (a); */
 /*   wigner3j_family_j (2, 2, -2, 2, &a, &two_jmin, &two_jmax); */

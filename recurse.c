@@ -42,7 +42,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       exit (1);
     }
 
-  if (ndim == 1)
+  if (ndim == 1) /* Only a single value is possible, requires special handling.*/
     {
       (*psi)[0] = single_val (params);
       return;
@@ -61,7 +61,6 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   if (fabs (y) > SMALL)
     {
       rs[0] = -X (nmin, params) / y;
-      printf("Trying LL98 Eq. 3\n");
 
       for (i = 1; i <= nmax_i; i++)
 	{
@@ -76,22 +75,21 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	  n = nmin + i;
 	  denom = Y (n, params) + Z (n, params) * rs[i - 1];
 
-	  if (fabs (denom) > SMALL) // Check probably unecessary since else path
-				    // never taken?
+	  if (fabs (denom) > SMALL)
 	    rs[i] = -X (n, params) / denom;
 	  else
 	    {
 	      nminus_i = i - 1;
-	      printf ("RARE ROUTE #1\n");
 	      break;
 	    }
 	}
 
       /* Generate psi(n_minus-k)/psi(n_minus) == Psi_minus(n) using LL98
-	 Eq. 5'. Does nothing if nminus_i = 0. */
+	 Eq. 5'. */
       if (nminus_i > 0)
 	{
 	  (*psi)[nminus_i-1] = rs[nminus_i-1];
+
 	  for (i=nminus_i-2; i>=0; i--)
 	    (*psi)[i] = (*psi)[i+1]*rs[i];
 	}
@@ -122,8 +120,6 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
   if (fabs (y) > SMALL)
     {
-      printf("Trying LL98 Eq. 2\n");
-
       rs[nmax_i] = - Z (nmax, params) / y;
 
       for (i = nmax_i - 1; i >= 0; i--)
@@ -145,7 +141,6 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	  else
 	    {
 	      nplus_i = i + 1;
-	      printf ("RARE ROUTE #2. nplus_i:%d nmax_i:%d denom:%g\n", nplus_i, nmax_i, denom);
 	      break;
 	    }
 	}
@@ -160,7 +155,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	}
 
     }
-  else /* First term undefined so can only iterate upwards from nminus. */
+  else
     {
       /* If Y is zero there are two possibilities: 
 
@@ -189,24 +184,15 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       double a;
       int start_i;
 
-      printf("Iterating up\n");
-
       if (nminus_i == 0) /* Then psi(nmin - 2) = 0, so psi(nmin + 1) = -Y(nmin) / X(nmin) */
 	{
+	  /* Note we have previously checked that X(nmin) is not 0 above. In fact, as
+	     an opimization, this stuff could be moved earlier. */
 	  double x = X (nmin, params);
 	  
-	  if (fabs (x) > SMALL)
-	    {
-	      (*psi)[0] = 1.0;
-	      (*psi)[1] = -Y (nmin, params) / x; /* Since psi(nmin - 1) = 0 */
-	      start_i = nminus_i + 2;
-	    }
-	  else		/* Unable to iterate upwards. */
-	    {
-	      iter_up = 0; // IS THIS BRANCH EVER TAKEN?
-	      printf ("RARE BRANCH ONE TAKEN!!\n");
-	      goto iterate_down;
-	    }
+	  (*psi)[0] = 1.0;
+	  (*psi)[1] = -Y (nmin, params) / x; /* Since psi(nmin - 1) = 0 */
+	  start_i = nminus_i + 2;
 	}
       else
 	{
@@ -219,8 +205,6 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	  double nn = nmin - 1.0 + i;	/* n - 1 */
 	  (*psi)[i] = -(Y (nn, params) * (*psi)[i - 1] +
 			Z (nn, params) * (*psi)[i - 2]) / X (nn, params);
-	  if ((*psi)[i] > 1.0)
-	    printf("psi[i] > 1: %g\n", (*psi)[i]);
 	}
 
       /* Since we choose nc=nplus, Psi_plus(nc)=1, and we multiply
@@ -235,30 +219,20 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       return;
     }
 
- iterate_down:
   if (iter_down) /* Iterate downwards from nplus, chosing nc = nminus. */
     {
       double a;
       int start_i;
 
-      printf("nplus_i: %d\n", nplus_i);
-
       if (nplus_i == nmax_i) /* Then psi(nmax + 2) = 0 so psi(nmax-1) = -Y(nmin) / X(nmin) */
 	{
+	  /* Note we have previously checked that Z(nmin) is not 0 above. In fact, as
+	     an opimization, this stuff could be moved earlier. */
 	  double z = Z (nmax, params);
 	  
-	  if (fabs (z) > SMALL)
-	    {
-	      (*psi)[nplus_i] = 1.0;
-	      (*psi)[nmax_i - 1] = -Y (nmax, params) / z;
-	      start_i = nplus_i - 2;
-	    }
-	  else			// Seems to be never taken
-	    {
-	      iter_down = 0;
-	      printf ("RARE BRANCH TWO TAKEN!!\n");
-	      goto fail;
-	    }
+	  (*psi)[nplus_i] = 1.0;
+	  (*psi)[nmax_i - 1] = -Y (nmax, params) / z;
+	  start_i = nplus_i - 2;
 	}
       else
 	{
@@ -271,8 +245,6 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	  double nn = nmin + 1.0 + i;	/* n + 1 */
 	  (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
 			Y (nn, params) * (*psi)[i + 1]) / Z (nn, params);
-	  if ((*psi)[i] > 1.0)
-	    printf("psi[i] > 1: %g\n", (*psi)[i]);
 	}
 	  
       /* Since we choose nc=nminus, Psi_minus(nc)=1, and we multiply
@@ -287,7 +259,6 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       return;
     }
 
- fail:
   fprintf (stderr, "LL98: Could not iterate in either direction\n");
   exit (1);
 
