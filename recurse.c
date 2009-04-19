@@ -1,6 +1,10 @@
 // TODO: remove rare branches if they're not used, and associated conditional
 // tests.
+
 // rename all _i to _idx.
+
+// LL98 shouldn't exit on malloc failure, should clean up and return an error
+// code instead.
 
 /* Functions for calculating angular momentum coupling coefficients using
    recurrsion relations. The algorithms used are those of Schulten and Gordon[1]
@@ -34,6 +38,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   int nmax_i = (two_nmax - two_nmin) / 2;
   int ndim = nmax_i + 1, nminus_i=0, nplus_i=nmax_i, i;
   int iter_up = 1, iter_down = 1;
+  int iter_up_start_i, iter_down_start_i;
 
   *psi = malloc (ndim * sizeof (double));
   if (*psi == NULL)
@@ -86,13 +91,19 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
       /* Generate psi(n_minus-k)/psi(n_minus) == Psi_minus(n) using LL98
 	 Eq. 5'. */
-      if (nminus_i > 0)
+      if (nminus_i > 0) // Surely unecessary
 	{
 	  (*psi)[nminus_i-1] = rs[nminus_i-1];
 
 	  for (i=nminus_i-2; i>=0; i--)
 	    (*psi)[i] = (*psi)[i+1]*rs[i];
 	}
+
+      /* Initialise psi[nminus] for three term recursion in classical region
+	 (LL98 Eq. 1). */
+      (*psi)[nminus_i] = 1.0;
+      iter_up_start_i = nminus_i + 1;
+
     }
   else 
     {
@@ -112,7 +123,16 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       nminus_i = 0;
 
       if (fabs(x) < SMALL) 
-	iter_up = 0;
+	  iter_up = 0;
+      else
+	{
+	  /* Initialise psi[0] and psi[1] for three term recursion in classical
+	  region (LL98 Eq. 1). Since psi(nmin - 2) = 0, and psi(nmin - 1) = 0, then 
+	  psi(nmin + 1) = -Y(nmin) / X(nmin) */
+	  (*psi)[0] = 1.0;
+	  (*psi)[1] = -Y (nmin, params) / x; /* Since psi(nmin - 1) = 0 */
+	  iter_up_start_i = nminus_i + 2;
+	}
     }
 
   /* Iterate LL98 Eq. 2 from nmax downwards, unless the first term is undefined. */
@@ -147,13 +167,17 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
       /* Generate psi(n_plus+k)/psi(n_plus) == Psi_plus(n) using LL98 Eq. 4'. Does
 	 nothing if nplus_i = nmax_i. */
-      if (nplus_i < nmax_i)
+      if (nplus_i < nmax_i) // Surely an unecessary check.
 	{
 	  (*psi)[nplus_i+1] = rs[nplus_i+1];
+
 	  for (i=nplus_i+2; i<=nmax_i; i++)
 	    (*psi)[i] = (*psi)[i-1]*rs[i];
 	}
-
+      /* Initialise psi[nplus] for three term recursion in classical region
+	 (LL98 Eq. 1). */
+      (*psi)[nplus_i] = 1.0;
+      iter_down_start_i = nplus_i - 1;
     }
   else
     {
@@ -174,6 +198,15 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
       if (fabs (z) < SMALL) 
 	  iter_down = 0;
+      else
+	{
+	  /* Initialise psi[nplus] and psi[nplus-1] for three term recursion in classical
+	  region (LL98 Eq. 1). Since psi(nmax + 2) = 0, and psi(nmax + 1) = 0, then 
+	  psi(nmax - 1) = -Y(nmax) / Z(nmax) */
+	  (*psi)[nplus_i] = 1.0;
+	  (*psi)[nplus_i - 1] = -Y (nmax, params) / z;
+	  iter_down_start_i = nplus_i - 2;
+	}
     }
 
   free (rs);
@@ -182,25 +215,8 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   if (iter_up) /* Iterate upwards from nminus, chosing nc = nplus. */
     {
       double a;
-      int start_i;
 
-      if (nminus_i == 0) /* Then psi(nmin - 2) = 0, so psi(nmin + 1) = -Y(nmin) / X(nmin) */
-	{
-	  /* Note we have previously checked that X(nmin) is not 0 above. In fact, as
-	     an opimization, this stuff could be moved earlier. */
-	  double x = X (nmin, params);
-	  
-	  (*psi)[0] = 1.0;
-	  (*psi)[1] = -Y (nmin, params) / x; /* Since psi(nmin - 1) = 0 */
-	  start_i = nminus_i + 2;
-	}
-      else
-	{
-	  (*psi)[nminus_i] = 1.0;
-	  start_i = nminus_i + 1;
-	}
-
-      for (i = start_i; i <= nplus_i; i++)
+      for (i = iter_up_start_i; i <= nplus_i; i++)
 	{
 	  double nn = nmin - 1.0 + i;	/* n - 1 */
 	  (*psi)[i] = -(Y (nn, params) * (*psi)[i - 1] +
@@ -222,25 +238,8 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   if (iter_down) /* Iterate downwards from nplus, chosing nc = nminus. */
     {
       double a;
-      int start_i;
 
-      if (nplus_i == nmax_i) /* Then psi(nmax + 2) = 0 so psi(nmax-1) = -Y(nmin) / X(nmin) */
-	{
-	  /* Note we have previously checked that Z(nmin) is not 0 above. In fact, as
-	     an opimization, this stuff could be moved earlier. */
-	  double z = Z (nmax, params);
-	  
-	  (*psi)[nplus_i] = 1.0;
-	  (*psi)[nmax_i - 1] = -Y (nmax, params) / z;
-	  start_i = nplus_i - 2;
-	}
-      else
-	{
-	  (*psi)[nplus_i] = 1.0;
-	  start_i = nplus_i - 1;
-	}
-
-      for (i = start_i; i >= nminus_i; i--)
+      for (i = iter_down_start_i; i >= nminus_i; i--)
 	{
 	  double nn = nmin + 1.0 + i;	/* n + 1 */
 	  (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
