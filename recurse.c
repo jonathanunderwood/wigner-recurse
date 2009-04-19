@@ -3,9 +3,6 @@
 
 // rename all _i to _idx.
 
-// LL98 shouldn't exit on malloc failure, should clean up and return an error
-// code instead.
-
 /* Functions for calculating angular momentum coupling coefficients using
    recurrsion relations. The algorithms used are those of Schulten and Gordon[1]
    augmented with the relations of Luscombe and Luben[2]. Commentary throughout
@@ -23,7 +20,10 @@
 #define ODD(n) ((n) & 1)
 #define SMALL 1.0e-10
 
-static void
+#define SUCCESS 0
+#define FAIL 1
+
+int
 LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       double (*X) (const double, const void *),
       double (*Y) (const double, const void *),
@@ -38,26 +38,26 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   int nmax_i = (two_nmax - two_nmin) / 2;
   int ndim = nmax_i + 1, nminus_i=0, nplus_i=nmax_i, i;
   int iter_up = 1, iter_down = 1;
-  int iter_up_start_i, iter_down_start_i;
 
   *psi = malloc (ndim * sizeof (double));
   if (*psi == NULL)
     {
       fprintf (stderr, "LL98: Memory allocation error (1)\n");
-      exit (1);
+      return FAIL;
     }
 
   if (ndim == 1) /* Only a single value is possible, requires special handling.*/
     {
       (*psi)[0] = single_val (params);
-      return;
+      return SUCCESS;
     }
 
   rs = malloc (ndim * sizeof (double));
   if (rs == NULL)
     {
       fprintf (stderr, "LL98: Memory allocation error (2)\n");
-      exit (1);
+      free (*psi);
+      return FAIL;
     }
 
   /* Iterate LL98 Eq. 3 from nmin upwards unless the first term is undefined. */
@@ -91,48 +91,30 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
       /* Generate psi(n_minus-k)/psi(n_minus) == Psi_minus(n) using LL98
 	 Eq. 5'. */
-      if (nminus_i > 0) // Surely unecessary
+      if (nminus_i > 0)
 	{
 	  (*psi)[nminus_i-1] = rs[nminus_i-1];
 
 	  for (i=nminus_i-2; i>=0; i--)
 	    (*psi)[i] = (*psi)[i+1]*rs[i];
 	}
-
-      /* Initialise psi[nminus] for three term recursion in classical region
-	 (LL98 Eq. 1). */
-      (*psi)[nminus_i] = 1.0;
-      iter_up_start_i = nminus_i + 1;
-
     }
   else 
     {
       /* If Y is zero there are two possibilities: 
-
+       
 	 a) X != 0. In this case, first term s(nmin) is infinity because
 	 psi(nmin + 1) = 0. However, psi(nmin) is not nescessarily 0 in this
 	 case though. This implies we're actually in the classically allowed
 	 region at nmin, and so we can later use the 3 term recursion to iterate
 	 up from nmin.
-
+       
 	 b) X = 0. In this case the first term is undefined, and we're unable to
-	 iterate upwards from nmin using either the 2 or 3 term recursions.
-      */
-      double x = X (nmin, params);
-
+	 iterate upwards from nmin using either the 2 or 3 term recursions. */
       nminus_i = 0;
 
-      if (fabs(x) < SMALL) 
-	  iter_up = 0;
-      else
-	{
-	  /* Initialise psi[0] and psi[1] for three term recursion in classical
-	  region (LL98 Eq. 1). Since psi(nmin - 2) = 0, and psi(nmin - 1) = 0, then 
-	  psi(nmin + 1) = -Y(nmin) / X(nmin) */
-	  (*psi)[0] = 1.0;
-	  (*psi)[1] = -Y (nmin, params) / x; /* Since psi(nmin - 1) = 0 */
-	  iter_up_start_i = nminus_i + 2;
-	}
+      if (fabs(X (nmin, params)) < SMALL) 
+	iter_up = 0;
     }
 
   /* Iterate LL98 Eq. 2 from nmax downwards, unless the first term is undefined. */
@@ -142,7 +124,8 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
     {
       rs[nmax_i] = - Z (nmax, params) / y;
 
-      for (i = nmax_i - 1; i >= 0; i--)
+      // this should probably be (i = nmax_i - 1; i > nminus_i; i--)
+      for (i = nmax_i - 1; i >= 0; i--) 
 	{
 	  double n, denom;
 
@@ -167,17 +150,13 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
       /* Generate psi(n_plus+k)/psi(n_plus) == Psi_plus(n) using LL98 Eq. 4'. Does
 	 nothing if nplus_i = nmax_i. */
-      if (nplus_i < nmax_i) // Surely an unecessary check.
+      if (nplus_i < nmax_i)
 	{
 	  (*psi)[nplus_i+1] = rs[nplus_i+1];
 
 	  for (i=nplus_i+2; i<=nmax_i; i++)
 	    (*psi)[i] = (*psi)[i-1]*rs[i];
 	}
-      /* Initialise psi[nplus] for three term recursion in classical region
-	 (LL98 Eq. 1). */
-      (*psi)[nplus_i] = 1.0;
-      iter_down_start_i = nplus_i - 1;
     }
   else
     {
@@ -190,23 +169,11 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	 up from nmin.
 
 	 b) Z = 0. In this case the first term is undefined, and we're unable to
-	 iterate upwards from nmin using either the 2 or 3 term recursions.
-      */
-      double z = Z (nmax, params);
-      
+	 iterate upwards from nmin using either the 2 or 3 term recursions. */
       nplus_i = nmax_i;
 
-      if (fabs (z) < SMALL) 
-	  iter_down = 0;
-      else
-	{
-	  /* Initialise psi[nplus] and psi[nplus-1] for three term recursion in classical
-	  region (LL98 Eq. 1). Since psi(nmax + 2) = 0, and psi(nmax + 1) = 0, then 
-	  psi(nmax - 1) = -Y(nmax) / Z(nmax) */
-	  (*psi)[nplus_i] = 1.0;
-	  (*psi)[nplus_i - 1] = -Y (nmax, params) / z;
-	  iter_down_start_i = nplus_i - 2;
-	}
+      if (fabs (Z (nmax, params)) < SMALL) 
+	iter_down = 0;
     }
 
   free (rs);
@@ -215,7 +182,25 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   if (iter_up) /* Iterate upwards from nminus, chosing nc = nplus. */
     {
       double a;
+      int iter_up_start_i;
 
+      /* Note that this initialization stuff can't be done inside the logic of
+	 iterating LL98 Eq. 3 above, since it can potentially be clobbered during
+	 the subsequent iteration of LL98 Eq. 4 if that section was also to
+	 contain initialization logic for iterating downwards in the classical
+	 region below. Really, tempting though it is, don't move this earlier. */
+      if (nminus_i < 2)
+	{
+	  (*psi)[0] = 1.0;
+	  (*psi)[1] = -Y(nmin, params) / X(nmin, params); /* Since psi(nmin - 1) = 0 */
+	  iter_up_start_i = 2;
+	}
+      else
+	{
+	  (*psi)[nminus_i] = 1.0;
+	  iter_up_start_i = nminus_i + 1;
+	}
+      
       for (i = iter_up_start_i; i <= nplus_i; i++)
 	{
 	  double nn = nmin - 1.0 + i;	/* n - 1 */
@@ -232,13 +217,29 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	(*psi)[i] *= a;
       
       normalize (*psi, nmin, nmax_i, params);
-      return;
+      return SUCCESS;
     }
 
   if (iter_down) /* Iterate downwards from nplus, chosing nc = nminus. */
     {
       double a;
+      int iter_down_start_i;
 
+      /* Note that this initialization stuff could be done inside the logic of
+	 iterating LL98 Eq. 2 above. However following that design leads to some
+	 rather obscure corner cases and errors, so it's cleaner to do it
+	 here. Really, don't move it. */
+      if (nplus_i > nmax_i - 2)
+	{
+	  (*psi)[nplus_i] = 1.0;
+	  (*psi)[nplus_i - 1] = -Y(nmax, params) / Z(nmax, params);
+	  iter_down_start_i = nplus_i - 2;
+	}
+      else
+	{
+	  (*psi)[nplus_i] = 1.0;
+	  iter_down_start_i = nplus_i - 1;
+	}
       for (i = iter_down_start_i; i >= nminus_i; i--)
 	{
 	  double nn = nmin + 1.0 + i;	/* n + 1 */
@@ -255,11 +256,11 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	(*psi)[i] *= a;
       
       normalize (*psi, nmin, nmax_i, params);
-      return;
+      return SUCCESS;
     }
 
   fprintf (stderr, "LL98: Could not iterate in either direction\n");
-  exit (1);
+  return FAIL;
 
 }
 

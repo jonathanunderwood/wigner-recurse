@@ -166,8 +166,8 @@ main ()
 
   check_3j_family_j_gsl (100, 100, 0, 0);
 
-  //  check_3j_family_j_exact_1(1e9);
-  check_3j_family_j_exact_2(10000);
+    check_3j_family_j_exact_1(1e4);
+  //check_3j_family_j_exact_2(10000);
 
 /*   free (a); */
 /*   wigner3j_family_j (2, 2, -2, 2, &a, &two_jmin, &two_jmax); */
