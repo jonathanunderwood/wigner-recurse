@@ -35,8 +35,8 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 {
   double y, *rs;
   double nmin = two_nmin / 2.0, nmax = two_nmax / 2.0;
-  int nmax_i = (two_nmax - two_nmin) / 2;
-  int ndim = nmax_i + 1, nminus_i=0, nplus_i=nmax_i, i;
+  int nmax_idx = (two_nmax - two_nmin) / 2;
+  int ndim = nmax_idx + 1, nminus_idx=0, nplus_idx=nmax_idx, i;
   int iter_up = 1, iter_down = 1;
 
   *psi = malloc (ndim * sizeof (double));
@@ -67,13 +67,13 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
     {
       rs[0] = -X (nmin, params) / y;
 
-      for (i = 1; i <= nmax_i; i++)
+      for (i = 1; i <= nmax_idx; i++)
 	{
 	  double n, denom;
 
 	  if (rs[i - 1] > 1.0)
 	    {
-	      nminus_i = i - 1;
+	      nminus_idx = i - 1;
 	      break;
 	    }
 
@@ -84,18 +84,18 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	    rs[i] = -X (n, params) / denom;
 	  else
 	    {
-	      nminus_i = i - 1;
+	      nminus_idx = i - 1;
 	      break;
 	    }
 	}
 
       /* Generate psi(n_minus-k)/psi(n_minus) == Psi_minus(n) using LL98
 	 Eq. 5'. */
-      if (nminus_i > 0)
+      if (nminus_idx > 0)
 	{
-	  (*psi)[nminus_i-1] = rs[nminus_i-1];
+	  (*psi)[nminus_idx-1] = rs[nminus_idx-1];
 
-	  for (i=nminus_i-2; i>=0; i--)
+	  for (i=nminus_idx-2; i>=0; i--)
 	    (*psi)[i] = (*psi)[i+1]*rs[i];
 	}
     }
@@ -111,7 +111,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
        
 	 b) X = 0. In this case the first term is undefined, and we're unable to
 	 iterate upwards from nmin using either the 2 or 3 term recursions. */
-      nminus_i = 0;
+      nminus_idx = 0;
 
       if (fabs(X (nmin, params)) < SMALL) 
 	iter_up = 0;
@@ -122,16 +122,17 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
   if (fabs (y) > SMALL)
     {
-      rs[nmax_i] = - Z (nmax, params) / y;
+      rs[nmax_idx] = - Z (nmax, params) / y;
 
-      // this should probably be (i = nmax_i - 1; i > nminus_i; i--)
-      for (i = nmax_i - 1; i >= 0; i--) 
+      for (i = nmax_idx - 1; i >= 0; i--) 
+	/* This could also be (i = nmax_idx - 1; i > nminus_idx; i--), but it makes
+	   no difference. */
 	{
 	  double n, denom;
 
 	  if (rs[i + 1] > 1.0)
 	    {
-	      nplus_i = i + 1;
+	      nplus_idx = i + 1;
 	      break;
 	    }
 
@@ -143,18 +144,18 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	    rs[i] = -Z (n, params) / denom;
 	  else
 	    {
-	      nplus_i = i + 1;
+	      nplus_idx = i + 1;
 	      break;
 	    }
 	}
 
       /* Generate psi(n_plus+k)/psi(n_plus) == Psi_plus(n) using LL98 Eq. 4'. Does
-	 nothing if nplus_i = nmax_i. */
-      if (nplus_i < nmax_i)
+	 nothing if nplus_idx = nmax_idx. */
+      if (nplus_idx < nmax_idx)
 	{
-	  (*psi)[nplus_i+1] = rs[nplus_i+1];
+	  (*psi)[nplus_idx+1] = rs[nplus_idx+1];
 
-	  for (i=nplus_i+2; i<=nmax_i; i++)
+	  for (i=nplus_idx+2; i<=nmax_idx; i++)
 	    (*psi)[i] = (*psi)[i-1]*rs[i];
 	}
     }
@@ -170,7 +171,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 
 	 b) Z = 0. In this case the first term is undefined, and we're unable to
 	 iterate upwards from nmin using either the 2 or 3 term recursions. */
-      nplus_i = nmax_i;
+      nplus_idx = nmax_idx;
 
       if (fabs (Z (nmax, params)) < SMALL) 
 	iter_down = 0;
@@ -182,26 +183,26 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   if (iter_up) /* Iterate upwards from nminus, chosing nc = nplus. */
     {
       double a;
-      int iter_up_start_i;
+      int iter_up_start_idx;
 
       /* Note that this initialization stuff can't be done inside the logic of
 	 iterating LL98 Eq. 3 above, since it can potentially be clobbered during
 	 the subsequent iteration of LL98 Eq. 4 if that section was also to
 	 contain initialization logic for iterating downwards in the classical
 	 region below. Really, tempting though it is, don't move this earlier. */
-      if (nminus_i < 2)
+      if (nminus_idx < 2)
 	{
 	  (*psi)[0] = 1.0;
 	  (*psi)[1] = -Y(nmin, params) / X(nmin, params); /* Since psi(nmin - 1) = 0 */
-	  iter_up_start_i = 2;
+	  iter_up_start_idx = 2;
 	}
       else
 	{
-	  (*psi)[nminus_i] = 1.0;
-	  iter_up_start_i = nminus_i + 1;
+	  (*psi)[nminus_idx] = 1.0;
+	  iter_up_start_idx = nminus_idx + 1;
 	}
       
-      for (i = iter_up_start_i; i <= nplus_i; i++)
+      for (i = iter_up_start_idx; i <= nplus_idx; i++)
 	{
 	  double nn = nmin - 1.0 + i;	/* n - 1 */
 	  (*psi)[i] = -(Y (nn, params) * (*psi)[i - 1] +
@@ -211,36 +212,37 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       /* Since we choose nc=nplus, Psi_plus(nc)=1, and we multiply
 	 Psi_minus(nmin...nplus) by Psi_plus(nc)/Psi_minus(nc) ==
 	 1/Psi_minus(n_plus) to give us Psi_plus(nmin...nplus). */
-      a = 1.0 / (*psi)[nplus_i];
+      a = 1.0 / (*psi)[nplus_idx];
       
-      for (i = 0; i <= nplus_i; i++)
+      for (i = 0; i <= nplus_idx; i++)
 	(*psi)[i] *= a;
       
-      normalize (*psi, nmin, nmax_i, params);
+      normalize (*psi, nmin, nmax_idx, params);
       return SUCCESS;
     }
 
   if (iter_down) /* Iterate downwards from nplus, chosing nc = nminus. */
     {
       double a;
-      int iter_down_start_i;
+      int iter_down_start_idx;
 
       /* Note that this initialization stuff could be done inside the logic of
 	 iterating LL98 Eq. 2 above. However following that design leads to some
 	 rather obscure corner cases and errors, so it's cleaner to do it
 	 here. Really, don't move it. */
-      if (nplus_i > nmax_i - 2)
+      if (nplus_idx > nmax_idx - 2)
 	{
-	  (*psi)[nplus_i] = 1.0;
-	  (*psi)[nplus_i - 1] = -Y(nmax, params) / Z(nmax, params);
-	  iter_down_start_i = nplus_i - 2;
+	  (*psi)[nplus_idx] = 1.0;
+	  (*psi)[nplus_idx - 1] = -Y(nmax, params) / Z(nmax, params);
+	  iter_down_start_idx = nplus_idx - 2;
 	}
       else
 	{
-	  (*psi)[nplus_i] = 1.0;
-	  iter_down_start_i = nplus_i - 1;
+	  (*psi)[nplus_idx] = 1.0;
+	  iter_down_start_idx = nplus_idx - 1;
 	}
-      for (i = iter_down_start_i; i >= nminus_i; i--)
+
+      for (i = iter_down_start_idx; i >= nminus_idx; i--)
 	{
 	  double nn = nmin + 1.0 + i;	/* n + 1 */
 	  (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
@@ -250,12 +252,12 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       /* Since we choose nc=nminus, Psi_minus(nc)=1, and we multiply
 	 Psi_plus(nminus...nmax) by Psi_minus(nc)/Psi_plus(nc) ==
 	 1/Psi_plus(n_plus) to give us Psi_minus(nminus...nmax). */
-      a = 1.0 / (*psi)[nminus_i];
+      a = 1.0 / (*psi)[nminus_idx];
       
-      for (i = nmax_i; i >= nminus_i; i--)
+      for (i = nmax_idx; i >= nminus_idx; i--)
 	(*psi)[i] *= a;
       
-      normalize (*psi, nmin, nmax_i, params);
+      normalize (*psi, nmin, nmax_idx, params);
       return SUCCESS;
     }
 
@@ -317,14 +319,14 @@ Z_3j_j (const double j, const void *params)
 }
 
 void
-normalize_3j_j (double *f, const double jmin, const int jmax_i,
+normalize_3j_j (double *f, const double jmin, const int jmax_idx,
 		const void *params)
 {
   params_3j_j *p = (params_3j_j *) params;
   double a = 0.0, phase;
   int i;
 
-  for (i = 0; i <= jmax_i; i++)
+  for (i = 0; i <= jmax_idx; i++)
     {
       double j = jmin + i;
       double ff = f[i];
@@ -338,10 +340,10 @@ normalize_3j_j (double *f, const double jmin, const int jmax_i,
   else
     phase = 1.0;
 
-  if ((f[jmax_i] / phase) < 0)
+  if ((f[jmax_idx] / phase) < 0)
     a = -a;
 
-  for (i = 0; i <= jmax_i; i++)
+  for (i = 0; i <= jmax_idx; i++)
     f[i] *= a;
 }
 
