@@ -3,10 +3,16 @@
 
 // rename all _i to _idx.
 
+// reduce indirection when indexing (*psi)[i] by making a copy eg. double
+// *psi_=(*psi)[0], and subsequently referencing psi_[i] ? Not sure this
+// works. Should help performance though if it does.
+
+
+
 /* Functions for calculating angular momentum coupling coefficients using
    recurrsion relations. The algorithms used are those of Schulten and Gordon[1]
    augmented with the relations of Luscombe and Luben[2]. Commentary throughout
-   refers to the paper of Luscombe and Luben (LL98). 
+   refers to the paper of Luscombe and Luben (LL98).
 
    [1] K. Schulten and R. G. Gordon, J. Math. Phys. 16, 1961 (1975).
    [2] J. H. Luscombe and M. Luben, Phys. Rev. E 57, 7274 (1998).
@@ -33,6 +39,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 /* This is the generic LL98 recurssion strategy common to the 3j and 6j
    calculations. */
 {
+  double *_psi;
   double y, *rs;
   double nmin = two_nmin / 2.0, nmax = two_nmax / 2.0;
   int nmax_idx = (two_nmax - two_nmin) / 2;
@@ -40,15 +47,16 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   int iter_up = 1, iter_down = 1;
 
   *psi = malloc (ndim * sizeof (double));
-  if (*psi == NULL)
+  if (psi == NULL)
     {
       fprintf (stderr, "LL98: Memory allocation error (1)\n");
       return FAIL;
     }
+  _psi = *psi;
 
   if (ndim == 1) /* Only a single value is possible, requires special handling.*/
     {
-      (*psi)[0] = single_val (params);
+      _psi[0] = single_val (params);
       return SUCCESS;
     }
 
@@ -56,7 +64,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   if (rs == NULL)
     {
       fprintf (stderr, "LL98: Memory allocation error (2)\n");
-      free (*psi);
+      free(_psi);
       return FAIL;
     }
 
@@ -93,10 +101,10 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	 Eq. 5'. */
       if (nminus_idx > 0)
 	{
-	  (*psi)[nminus_idx-1] = rs[nminus_idx-1];
+	  _psi[nminus_idx-1] = rs[nminus_idx-1];
 
 	  for (i=nminus_idx-2; i>=0; i--)
-	    (*psi)[i] = (*psi)[i+1]*rs[i];
+	    _psi[i] = _psi[i+1]*rs[i];
 	}
     }
   else 
@@ -149,14 +157,13 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	    }
 	}
 
-      /* Generate psi(n_plus+k)/psi(n_plus) == Psi_plus(n) using LL98 Eq. 4'. Does
-	 nothing if nplus_idx = nmax_idx. */
+      /* Generate psi(n_plus+k)/psi(n_plus) == Psi_plus(n) using LL98 Eq. 4'. */
       if (nplus_idx < nmax_idx)
 	{
-	  (*psi)[nplus_idx+1] = rs[nplus_idx+1];
+	  _psi[nplus_idx+1] = rs[nplus_idx+1];
 
 	  for (i=nplus_idx+2; i<=nmax_idx; i++)
-	    (*psi)[i] = (*psi)[i-1]*rs[i];
+	    _psi[i] = _psi[i-1]*rs[i];
 	}
     }
   else
@@ -192,32 +199,32 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	 region below. Really, tempting though it is, don't move this earlier. */
       if (nminus_idx < 2)
 	{
-	  (*psi)[0] = 1.0;
-	  (*psi)[1] = -Y(nmin, params) / X(nmin, params); /* Since psi(nmin - 1) = 0 */
+	  _psi[0] = 1.0;
+	  _psi[1] = -Y(nmin, params) / X(nmin, params); /* Since psi(nmin - 1) = 0 */
 	  iter_up_start_idx = 2;
 	}
       else
 	{
-	  (*psi)[nminus_idx] = 1.0;
+	  _psi[nminus_idx] = 1.0;
 	  iter_up_start_idx = nminus_idx + 1;
 	}
       
       for (i = iter_up_start_idx; i <= nplus_idx; i++)
 	{
 	  double nn = nmin - 1.0 + i;	/* n - 1 */
-	  (*psi)[i] = -(Y (nn, params) * (*psi)[i - 1] +
-			Z (nn, params) * (*psi)[i - 2]) / X (nn, params);
+	  _psi[i] = -(Y (nn, params) * _psi[i - 1] +
+			Z (nn, params) * _psi[i - 2]) / X (nn, params);
 	}
 
       /* Since we choose nc=nplus, Psi_plus(nc)=1, and we multiply
 	 Psi_minus(nmin...nplus) by Psi_plus(nc)/Psi_minus(nc) ==
 	 1/Psi_minus(n_plus) to give us Psi_plus(nmin...nplus). */
-      a = 1.0 / (*psi)[nplus_idx];
+      a = 1.0 / _psi[nplus_idx];
       
       for (i = 0; i <= nplus_idx; i++)
-	(*psi)[i] *= a;
+	_psi[i] *= a;
       
-      normalize (*psi, nmin, nmax_idx, params);
+      normalize (_psi, nmin, nmax_idx, params);
       return SUCCESS;
     }
 
@@ -232,32 +239,32 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 	 here. Really, don't move it. */
       if (nplus_idx > nmax_idx - 2)
 	{
-	  (*psi)[nplus_idx] = 1.0;
-	  (*psi)[nplus_idx - 1] = -Y(nmax, params) / Z(nmax, params);
+	  _psi[nplus_idx] = 1.0;
+	  _psi[nplus_idx - 1] = -Y(nmax, params) / Z(nmax, params);
 	  iter_down_start_idx = nplus_idx - 2;
 	}
       else
 	{
-	  (*psi)[nplus_idx] = 1.0;
+	  _psi[nplus_idx] = 1.0;
 	  iter_down_start_idx = nplus_idx - 1;
 	}
 
       for (i = iter_down_start_idx; i >= nminus_idx; i--)
 	{
 	  double nn = nmin + 1.0 + i;	/* n + 1 */
-	  (*psi)[i] = -(X (nn, params) * (*psi)[i + 2] +
-			Y (nn, params) * (*psi)[i + 1]) / Z (nn, params);
+	  _psi[i] = -(X (nn, params) * _psi[i + 2] +
+			Y (nn, params) * _psi[i + 1]) / Z (nn, params);
 	}
 	  
       /* Since we choose nc=nminus, Psi_minus(nc)=1, and we multiply
 	 Psi_plus(nminus...nmax) by Psi_minus(nc)/Psi_plus(nc) ==
 	 1/Psi_plus(n_plus) to give us Psi_minus(nminus...nmax). */
-      a = 1.0 / (*psi)[nminus_idx];
+      a = 1.0 / _psi[nminus_idx];
       
       for (i = nmax_idx; i >= nminus_idx; i--)
-	(*psi)[i] *= a;
+	_psi[i] *= a;
       
-      normalize (*psi, nmin, nmax_idx, params);
+      normalize (_psi, nmin, nmax_idx, params);
       return SUCCESS;
     }
 
