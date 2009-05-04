@@ -388,5 +388,128 @@ wigner3j_family_j (const int two_j2, const int two_j3,
 /* End of specifics for 3j calculation by j recurrsion. */
 
 
+/* Specific functions for calculation of 3j coefficients using m recurrsion -
+   second column of Table 1 of LL98. */
+typedef struct params_3j_j
+{
+  int two_j1, two_j2, two_j3, two_m1, two_mmin, two_mmax;
+  double j1, j2, j3, m1;
+} params_3j_j;
+
+double
+C (const double m, const double j1, const double j2, const double j3,
+   const double m1)
+{
+  return sqrt ((j2-m+1)*(j2+m)*j3-m-m1+1.0)*(j3+m+m1));
+}
+
+double
+D (const double m, const double j1, const double j2, const double j3,
+   const double m1)
+{
+
+  return j2*(j2+1.0)+j3*(j3+1.0)-j1*(j1+1.0)-2.0*m*(m+m1);
+}
+
+double
+X_3j_m (const double m, const void *params)
+{
+  params_3j_j *p = (params_3j_m *) params;
+  return C (m+1.0, p->j1, p->j2, p->j3, p->m1);
+}
+
+double
+Y_3j_m (const double m, const void *params)
+{
+  params_3j_j *p = (params_3j_m *) params;
+  return D (m, p->j1, p->j2, p->j3, p->m1);
+}
+
+double
+Z_3j_j (const double m, const void *params)
+{
+  params_3j_j *p = (params_3j_m *) params;
+  return C (m, p->j1, p->j2, p->j3, p->m1);
+}
+
+void
+normalize_3j_m (double *f, const double mmin, const int mmax_idx,
+		const void *params)
+{
+  params_3j_j *p = (params_3j_m *) params;
+  double a = 0.0, phase;
+  int i;
+
+  for (i = 0; i <= mmax_idx; i++)
+    {
+      double ff = f[i];
+      a += ff * ff;
+    }
+
+  a *= 2.0 * p->j1 + 1.0;
+  a = 1.0 / sqrt (a);
+
+  if (ODD ((p->two_j2 - p->two_j3 - p->two_m1) / 2))
+    phase = -1.0;
+  else
+    phase = 1.0;
+
+  if ((f[jmax_idx] / phase) < 0)
+    a = -a;
+
+  for (i = 0; i <= jmax_idx; i++)
+    f[i] *= a;
+}
+
+double
+single_val_3j_m (const void *params)
+{
+  params_3j_j *p = (params_3j_j *) params;
+  double a = 1.0 / sqrt(p->two_j1 + 1.0);
+  
+  if (ODD ((p->two_j1 - p->two_m1) / 2))
+    return -a;
+  else
+    return a;
+}
+
+void
+wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
+		   const int two_m1, double **family, int *two_mmin, 
+		   int *two_mmax)
+{
+  // TODO: Add checking for vald inputs!
+  params_3j_m p;
+  int a;
+
+  a = abs (-two_j3 - two_m1);
+  
+  *two_mmin = -two_j2 > a ? -two_j2 : a;
+
+  a = two_j3-two_m1;
+  *two_mmax =  -two_j2 < a ? -two_j2 : a;
+
+  p.two_j1 = two_j1;
+  p.two_j2 = two_j2;
+  p.two_j3 = two_j3;
+  p.two_m1 = two_m1;
+
+  p.j1 = two_j1 / 2.0;
+  p.j2 = two_j2 / 2.0;
+  p.j3 = two_j3 / 2.0;
+  p.m1 = two_m1 / 2.0;
+
+  p.two_mmin=*two_mmin;
+  p.two_mmax=*two_mmax;
+  
+  LL98 (family, *two_mmin, *two_mmax, &p, X_3j_m, Y_3j_m, Z_3j_m,
+	normalize_3j_m, single_val_3j_m);
+}
+
+
+/* End of specifics for 3j calculation by m recurrsion. */
+
+
+
 #undef ODD
 #undef SMALL
