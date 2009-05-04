@@ -1,14 +1,3 @@
-// TODO: remove rare branches if they're not used, and associated conditional
-// tests.
-
-// rename all _i to _idx.
-
-// reduce indirection when indexing (*psi)[i] by making a copy eg. double
-// *psi_=(*psi)[0], and subsequently referencing psi_[i] ? Not sure this
-// works. Should help performance though if it does.
-
-
-
 /* Functions for calculating angular momentum coupling coefficients using
    recurrsion relations. The algorithms used are those of Schulten and Gordon[1]
    augmented with the relations of Luscombe and Luben[2]. Commentary throughout
