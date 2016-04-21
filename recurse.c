@@ -39,7 +39,7 @@
 #define SUCCESS 0
 #define FAIL 1
 
-int
+static inline int
 LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       double (*X) (const double, const void *),
       double (*Y) (const double, const void *),
@@ -282,7 +282,7 @@ typedef struct params_3j_j
   double j2, j3, m2, m3;
 } params_3j_j;
 
-double
+static inline double
 A (const double j, const double j2, const double j3,
    const double m2, const double m3)
 {
@@ -294,7 +294,7 @@ A (const double j, const double j2, const double j3,
   return sqrt ((a - b * b) * (c * c - a) * (a - d * d));
 }
 
-double
+static inline double
 B (const double j, const double j2, const double j3,
    const double m2, const double m3)
 {
@@ -305,28 +305,28 @@ B (const double j, const double j2, const double j3,
   return (2.0 * j + 1.0) * (a * b - c);
 }
 
-double
+static inline double
 X_3j_j (const double j, const void *params)
 {
   params_3j_j *p = (params_3j_j *) params;
   return j * A (j + 1.0, p->j2, p->j3, p->m2, p->m3);
 }
 
-double
+static inline double
 Y_3j_j (const double j, const void *params)
 {
   params_3j_j *p = (params_3j_j *) params;
   return B (j, p->j2, p->j3, p->m2, p->m3);
 }
 
-double
+static inline double
 Z_3j_j (const double j, const void *params)
 {
   params_3j_j *p = (params_3j_j *) params;
   return (j + 1.0) * A (j, p->j2, p->j3, p->m2, p->m3);
 }
 
-void
+static void
 normalize_3j_j (double *f, const double jmin, const int jmax_idx,
 		const void *params)
 {
@@ -355,7 +355,7 @@ normalize_3j_j (double *f, const double jmin, const int jmax_idx,
     f[i] *= a;
 }
 
-double
+static inline double
 single_val_3j_j (const void *params)
 {
   params_3j_j *p = (params_3j_j *) params;
@@ -408,14 +408,14 @@ typedef struct params_3j_m
   double j1, j2, j3, m1;
 } params_3j_m;
 
-double
+static inline double
 C (const double m, const double j1, const double j2, const double j3,
    const double m1)
 {
   return sqrt ((j2 - m + 1) * (j2 + m) * (j3 - m - m1 + 1.0) * (j3 + m + m1));
 }
 
-double
+static inline double
 D (const double m, const double j1, const double j2, const double j3,
    const double m1)
 {
@@ -424,28 +424,28 @@ D (const double m, const double j1, const double j2, const double j3,
 									  m1);
 }
 
-double
+static inline double
 X_3j_m (const double m, const void *params)
 {
   params_3j_m *p = (params_3j_m *) params;
   return C (m + 1.0, p->j1, p->j2, p->j3, p->m1);
 }
 
-double
+static inline double
 Y_3j_m (const double m, const void *params)
 {
   params_3j_m *p = (params_3j_m *) params;
   return D (m, p->j1, p->j2, p->j3, p->m1);
 }
 
-double
+static inline double
 Z_3j_m (const double m, const void *params)
 {
   params_3j_m *p = (params_3j_m *) params;
   return C (m, p->j1, p->j2, p->j3, p->m1);
 }
 
-void
+static inline void
 normalize_3j_m (double *f, const double mmin, const int mmax_idx,
 		const void *params)
 {
@@ -474,7 +474,7 @@ normalize_3j_m (double *f, const double mmin, const int mmax_idx,
     f[i] *= a;
 }
 
-double
+static inline double
 single_val_3j_m (const void *params)
 {
   params_3j_m *p = (params_3j_m *) params;
