@@ -28,12 +28,13 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 /* This is the generic LL98 recurssion strategy common to the 3j and 6j
    calculations. */
 {
-  double *_psi;
-  double y, *rs;
-  double nmin = two_nmin / 2.0, nmax = two_nmax / 2.0;
   int nmax_idx = (two_nmax - two_nmin) / 2;
   int ndim = nmax_idx + 1, nminus_idx=0, nplus_idx=nmax_idx, i;
   int iter_up = 1, iter_down = 1;
+  double *_psi;
+  double y;
+  double nmin = two_nmin / 2.0, nmax = two_nmax / 2.0;
+  double rs[ndim];
 
   *psi = malloc (ndim * sizeof (double));
   if (psi == NULL)
@@ -47,14 +48,6 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
     {
       _psi[0] = single_val (params);
       return SUCCESS;
-    }
-
-  rs = malloc (ndim * sizeof (double));
-  if (rs == NULL)
-    {
-      fprintf (stderr, "LL98: Memory allocation error (2)\n");
-      free(_psi);
-      return FAIL;
     }
 
   /* Iterate LL98 Eq. 3 from nmin upwards unless the first term is undefined. */
@@ -172,8 +165,6 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       if (fabs (Z (nmax, params)) < SMALL) 
 	iter_down = 0;
     }
-
-  free (rs);
 
   /* Iterate in the classical region using three term recursion LL98 Eq. 1.  */
   if (iter_up) /* Iterate upwards from nminus, chosing nc = nplus. */
