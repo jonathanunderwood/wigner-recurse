@@ -1,3 +1,24 @@
+/* This file is part of wigner-recurse, code for calculating Wigner 3j
+ * and 6j symbols using recursion.
+ *
+ * Copyright (C) 2008-2016 Jonathan * G. Underwood.
+ *
+ * wigner-recurse is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * wigner-recurse is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with wigner-recurse.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+
+
 /* Functions for calculating angular momentum coupling coefficients using
    recurrsion relations. The algorithms used are those of Schulten and Gordon[1]
    augmented with the relations of Luscombe and Luben[2]. Commentary throughout
