@@ -146,6 +146,33 @@ check_3j_family_j_gsl (const int two_j1, const int two_j2,
   free (a);
 }
 
+void
+check_3j_family_m_gsl (const int two_j1, const int two_j2,
+                       const int two_j3, const int two_m1)
+{
+  double *a;
+  int two_mmin, two_mmax, imax, i;
+
+  wigner3j_family_m (two_j1, two_j2, two_j3, two_m1, &a, &two_mmin, &two_mmax);
+
+  imax = (two_mmax-two_mmin)/2;
+
+  printf ("two_j1: %d two_j2: %d two_j3: %d two_m1: %d\n",
+	  two_j1, two_j2, two_j3, two_m1);
+
+  for(i=0; i<=imax; i++)
+    {
+      int two_m=two_mmin+i*2;
+      double gsl=gsl_sf_coupling_3j(two_j1, two_j2, two_j3,
+				    two_m1, two_m, -two_m1 - two_m);
+      printf ("\ttwo_m: %d\t\twigner: %g\tgsl: %g\tdiff: %g\n",
+	      two_m, a[i], gsl, a[i]-gsl);
+    }
+
+  free (a);
+}
+
+
 int
 main ()
 {
@@ -166,7 +193,7 @@ main ()
 
   check_3j_family_j_gsl (100, 100, 0, 0);
 
-    check_3j_family_j_exact_1(1e4);
+  check_3j_family_j_exact_1(1e4);
   //check_3j_family_j_exact_2(10000);
 
 /*   free (a); */
@@ -174,6 +201,10 @@ main ()
 /*   free (a); */
 /*   wigner3j_family_j (1, 2, -1, 0, &a, &two_jmin, &two_jmax); */
 
+  check_3j_family_m_gsl (1, 1, 2, -1);
+  check_3j_family_m_gsl (9, 8, 9, 3);
+  check_3j_family_m_gsl (90, 80, 90, 10);
+  check_3j_family_m_gsl (180, 180, 90, 10);
 
   return 0;
 }
