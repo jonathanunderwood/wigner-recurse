@@ -34,7 +34,7 @@
 #include "recurse.h"
 
 #define ODD(n) ((n) & 1)
-#define SMALL 1.0e-10
+#define SMALL 1.0e-15
 
 #define SUCCESS 0
 #define FAIL 1
@@ -495,12 +495,11 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
   params_3j_m p;
   int a;
 
-  a = abs (-two_j3 - two_m1);
-
+  a = -two_j3 - two_m1;
   *two_mmin = -two_j2 > a ? -two_j2 : a;
 
   a = two_j3 - two_m1;
-  *two_mmax = -two_j2 < a ? -two_j2 : a;
+  *two_mmax = two_j2 < a ? two_j2 : a;
 
   p.two_j1 = two_j1;
   p.two_j2 = two_j2;
