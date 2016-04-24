@@ -34,8 +34,8 @@
 #include <stdbool.h>
 #include "recurse.h"
 
-#define ODD(n) ((n) & 1)
-#define EVEN(n) (!(ODD(n)))
+#define __ODD(n) ((n) & 1)
+#define EVEN(n) (!(__ODD(n)))
 #define __MAX(a,b) ((a) > (b) ? (a) : (b))
 #define __MIN(a,b) ((a) < (b) ? (a) : (b))
 #define SMALL 1.0e-15
@@ -338,7 +338,7 @@ normalize_3j_j (double *f, const double jmin, const int jmax_idx,
 
   a = 1.0 / sqrt (a);
 
-  if (ODD ((p->two_j2 - p->two_j3 + p->two_m2 + p->two_m3) / 2))
+  if (__ODD ((p->two_j2 - p->two_j3 + p->two_m2 + p->two_m3) / 2))
     phase = -1.0;
   else
     phase = 1.0;
@@ -356,7 +356,7 @@ single_val_3j_j (const void *params)
   params_3j_j *p = (params_3j_j *) params;
   double a = 1.0 / sqrt (p->two_jmin + 1.0);
 
-  if (ODD ((p->two_jmin + p->two_m2 + p->two_m3) / 2))
+  if (__ODD ((p->two_jmin + p->two_m2 + p->two_m3) / 2))
     return -a;
   else
     return a;
@@ -375,7 +375,7 @@ wigner3j_family_j (const int two_j2, const int two_j3,
     return FAIL;
 
   /* Check (j,m) pairs are both integer or both half integer */
-  if (ODD (two_m2 + two_j2) || ODD (two_m3 + two_j3))
+  if (__ODD (two_m2 + two_j2) || __ODD (two_m3 + two_j3))
     return FAIL;
 
   a = abs (two_j2 - two_j3);
@@ -477,7 +477,7 @@ normalize_3j_m (double *f, const double mmin, const int mmax_idx,
   a *= 2.0 * p->j1 + 1.0;
   a = 1.0 / sqrt (a);
 
-  if (ODD ((p->two_j2 - p->two_j3 - p->two_m1) / 2))
+  if (__ODD ((p->two_j2 - p->two_j3 - p->two_m1) / 2))
     phase = -1.0;
   else
     phase = 1.0;
@@ -495,7 +495,7 @@ single_val_3j_m (const void *params)
   params_3j_m *p = (params_3j_m *) params;
   double a = 1.0 / sqrt (p->two_j1 + 1.0);
 
-  if (ODD ((p->two_j1 - p->two_m1) / 2))
+  if (__ODD ((p->two_j1 - p->two_m1) / 2))
     return -a;
   else
     return a;
@@ -529,7 +529,7 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
     return FAIL;
 
   /* Check j1 and m1 are both integer or both half integer */
-  if (ODD (two_m1 + two_j1))
+  if (__ODD (two_m1 + two_j1))
     return FAIL;
 
   *two_mmin = __MAX(-two_j2, -two_j3 - two_m1);
@@ -568,7 +568,7 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 
 
 
-#undef ODD
+#undef __ODD
 #undef EVEN
 #undef __MAX
 #undef __MIN
