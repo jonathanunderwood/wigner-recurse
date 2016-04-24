@@ -38,7 +38,7 @@
 #define __EVEN(n) (!(__ODD(n)))
 #define __MAX(a,b) ((a) > (b) ? (a) : (b))
 #define __MIN(a,b) ((a) < (b) ? (a) : (b))
-#define SMALL 1.0e-15
+#define __SMALL 1.0e-15
 
 #define SUCCESS 0
 #define FAIL 1
@@ -69,7 +69,7 @@ LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
   /* Iterate LL98 Eq. 3 from nmin upwards unless the first term is undefined. */
   y = Y (nmin, params);
 
-  if (fabs (y) > SMALL)
+  if (fabs (y) > __SMALL)
     {
       rs[0] = -X (nmin, params) / y;
 
@@ -86,7 +86,7 @@ LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
 	  n = nmin + i;
 	  denom = Y (n, params) + Z (n, params) * rs[i - 1];
 
-	  if (fabs (denom) > SMALL)
+	  if (fabs (denom) > __SMALL)
 	    rs[i] = -X (n, params) / denom;
 	  else
 	    {
@@ -119,14 +119,14 @@ LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
          iterate upwards from nmin using either the 2 or 3 term recursions. */
       nminus_idx = 0;
 
-      if (fabs (X (nmin, params)) < SMALL)
+      if (fabs (X (nmin, params)) < __SMALL)
 	iter_up = false;
     }
 
   /* Iterate LL98 Eq. 2 from nmax downwards, unless the first term is undefined. */
   y = Y (nmax, params);
 
-  if (fabs (y) > SMALL)
+  if (fabs (y) > __SMALL)
     {
       rs[nmax_idx] = -Z (nmax, params) / y;
 
@@ -146,7 +146,7 @@ LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
 
 	  denom = Y (n, params) + X (n, params) * rs[i + 1];
 
-	  if (fabs (denom) > SMALL)
+	  if (fabs (denom) > __SMALL)
 	    rs[i] = -Z (n, params) / denom;
 	  else
 	    {
@@ -178,7 +178,7 @@ LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
          iterate upwards from nmin using either the 2 or 3 term recursions. */
       nplus_idx = nmax_idx;
 
-      if (fabs (Z (nmax, params)) < SMALL)
+      if (fabs (Z (nmax, params)) < __SMALL)
 	iter_down = false;
     }
 
@@ -572,6 +572,6 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 #undef __EVEN
 #undef __MAX
 #undef __MIN
-#undef SMALL
+#undef __SMALL
 #undef SUCCESS
 #undef FAIL
