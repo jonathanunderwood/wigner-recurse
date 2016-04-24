@@ -35,6 +35,7 @@
 #include "recurse.h"
 
 #define ODD(n) ((n) & 1)
+#define EVEN(n) (!(ODD(n)))
 #define SMALL 1.0e-15
 
 #define SUCCESS 0
@@ -487,14 +488,36 @@ single_val_3j_m (const void *params)
     return a;
 }
 
-void
+static inline bool
+is_triangle (const int two_ja, const int two_jb, const int two_jc)
+/* Returns 0 if the triangle condition is met, and the sum of twice
+   the angular momenta is even. Arguments are twice the value of the
+   angular momenta. */
+{
+  if ((two_jc <= two_ja + two_jb) && (two_jc >= abs (two_ja - two_jb))
+      && (EVEN (two_ja + two_jb + two_jc)))
+    return true;
+  else
+    return false;
+}
+
+int
 wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 		   const int two_m1, double **family, int *two_mmin,
 		   int *two_mmax)
 {
-  // TODO: Add checking for vald inputs!
   params_3j_m p;
   int a;
+
+  if (!is_triangle (two_j1, two_j2, two_j3))
+    return FAIL;
+
+  if (abs (two_m1) > two_j1)
+    return FAIL;
+
+  /* Check j1 and m1 are both integer or both half integer */
+  if (ODD (two_m1 + two_j1))
+    return FAIL;
 
   a = -two_j3 - two_m1;
   *two_mmin = -two_j2 > a ? -two_j2 : a;
@@ -517,6 +540,8 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 
   LL98 (family, *two_mmin, *two_mmax, &p, X_3j_m, Y_3j_m, Z_3j_m,
 	normalize_3j_m, single_val_3j_m);
+
+  return SUCCESS;
 }
 
 

@@ -25,9 +25,9 @@ void wigner3j_family_j (const int two_j2, const int two_j3,
                         const int two_m2, const int two_m3,
 			double **family, int *two_jmin, int *two_jmax);
 
-void wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
-                        const int two_m1, double **family, int *two_mmin,
-                        int *two_mmax);
+int wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
+                       const int two_m1, double **family, int *two_mmin,
+                       int *two_mmax);
 
 #endif /* __WIGNER_RECURSE_H__ */
 
