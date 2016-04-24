@@ -40,7 +40,7 @@
 #define __MIN(a,b) ((a) < (b) ? (a) : (b))
 #define __SMALL 1.0e-15
 
-#define SUCCESS 0
+#define __SUCCESS 0
 #define FAIL 1
 
 static inline int
@@ -63,7 +63,7 @@ LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
   if (ndim == 1)		/* Only a single value is possible, requires special handling. */
     {
       psi[0] = single_val (params);
-      return SUCCESS;
+      return __SUCCESS;
     }
 
   /* Iterate LL98 Eq. 3 from nmin upwards unless the first term is undefined. */
@@ -221,7 +221,7 @@ LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
 	psi[i] *= a;
 
       normalize (psi, nmin, nmax_idx, params);
-      return SUCCESS;
+      return __SUCCESS;
     }
 
   if (iter_down)		/* Iterate downwards from nplus, chosing nc = nminus. */
@@ -261,7 +261,7 @@ LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
 	psi[i] *= a;
 
       normalize (psi, nmin, nmax_idx, params);
-      return SUCCESS;
+      return __SUCCESS;
     }
 
   fprintf (stderr, "LL98: Could not iterate in either direction\n");
@@ -409,7 +409,7 @@ wigner3j_family_j (const int two_j2, const int two_j3,
   LL98 (*family, *two_jmin, *two_jmax, &p, X_3j_j, Y_3j_j, Z_3j_j,
 	normalize_3j_j, single_val_3j_j);
 
-  return SUCCESS;
+  return __SUCCESS;
 }
 
 /* End of specifics for 3j calculation by j recurrsion. */
@@ -560,7 +560,7 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
   LL98 (*family, *two_mmin, *two_mmax, &p, X_3j_m, Y_3j_m, Z_3j_m,
 	normalize_3j_m, single_val_3j_m);
 
-  return SUCCESS;
+  return __SUCCESS;
 }
 
 
@@ -573,5 +573,5 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 #undef __MAX
 #undef __MIN
 #undef __SMALL
-#undef SUCCESS
+#undef __SUCCESS
 #undef FAIL
