@@ -364,10 +364,6 @@ single_val_3j_j (const void *params)
     return a;
 }
 
-extern size_t
-wigner3j_family_j_dim (const int two_j2, const int two_j3,
-                       const int two_m2, const int two_m3);
-
 int
 wigner3j_family_j (const int two_j2, const int two_j3,
 		   const int two_m2, const int two_m3,
@@ -519,10 +515,6 @@ is_triangle (const int two_ja, const int two_jb, const int two_jc)
   else
     return false;
 }
-
-extern size_t
-wigner3j_family_m_dim (const int two_j1, const int two_j2, const int two_j3,
-                       const int two_m1);
 
 int
 wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
