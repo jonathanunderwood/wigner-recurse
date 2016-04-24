@@ -42,7 +42,7 @@
 #define FAIL 1
 
 static inline int
-LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
+LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
       double (*X) (const double, const void *),
       double (*Y) (const double, const void *),
       double (*Z) (const double, const void *),
@@ -54,22 +54,13 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
   int nmax_idx = (two_nmax - two_nmin) / 2;
   int ndim = nmax_idx + 1, nminus_idx = 0, nplus_idx = nmax_idx, i;
   bool iter_up = true, iter_down = true;
-  double *_psi;
   double y;
   double nmin = two_nmin / 2.0, nmax = two_nmax / 2.0;
   double rs[ndim];
 
-  *psi = malloc (ndim * sizeof (double));
-  if (psi == NULL)
-    {
-      fprintf (stderr, "LL98: Memory allocation error (1)\n");
-      return FAIL;
-    }
-  _psi = *psi;
-
   if (ndim == 1)		/* Only a single value is possible, requires special handling. */
     {
-      _psi[0] = single_val (params);
+      psi[0] = single_val (params);
       return SUCCESS;
     }
 
@@ -106,10 +97,10 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
          Eq. 5'. */
       if (nminus_idx > 0)
 	{
-	  _psi[nminus_idx - 1] = rs[nminus_idx - 1];
+	  psi[nminus_idx - 1] = rs[nminus_idx - 1];
 
 	  for (i = nminus_idx - 2; i >= 0; i--)
-	    _psi[i] = _psi[i + 1] * rs[i];
+	    psi[i] = psi[i + 1] * rs[i];
 	}
     }
   else
@@ -165,10 +156,10 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       /* Generate psi(n_plus+k)/psi(n_plus) == Psi_plus(n) using LL98 Eq. 4'. */
       if (nplus_idx < nmax_idx)
 	{
-	  _psi[nplus_idx + 1] = rs[nplus_idx + 1];
+	  psi[nplus_idx + 1] = rs[nplus_idx + 1];
 
 	  for (i = nplus_idx + 2; i <= nmax_idx; i++)
-	    _psi[i] = _psi[i - 1] * rs[i];
+	    psi[i] = psi[i - 1] * rs[i];
 	}
     }
   else
@@ -202,32 +193,32 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
          region below. Really, tempting though it is, don't move this earlier. */
       if (nminus_idx < 2)
 	{
-	  _psi[0] = 1.0;
-	  _psi[1] = -Y (nmin, params) / X (nmin, params);	/* Since psi(nmin - 1) = 0 */
+	  psi[0] = 1.0;
+	  psi[1] = -Y (nmin, params) / X (nmin, params);	/* Since psi(nmin - 1) = 0 */
 	  iter_up_start_idx = 2;
 	}
       else
 	{
-	  _psi[nminus_idx] = 1.0;
+	  psi[nminus_idx] = 1.0;
 	  iter_up_start_idx = nminus_idx + 1;
 	}
 
       for (i = iter_up_start_idx; i <= nplus_idx; i++)
 	{
 	  double nn = nmin - 1.0 + i;	/* n - 1 */
-	  _psi[i] = -(Y (nn, params) * _psi[i - 1] +
-		      Z (nn, params) * _psi[i - 2]) / X (nn, params);
+	  psi[i] = -(Y (nn, params) * psi[i - 1] +
+		      Z (nn, params) * psi[i - 2]) / X (nn, params);
 	}
 
       /* Since we choose nc=nplus, Psi_plus(nc)=1, and we multiply
          Psi_minus(nmin...nplus) by Psi_plus(nc)/Psi_minus(nc) ==
          1/Psi_minus(n_plus) to give us Psi_plus(nmin...nplus). */
-      a = 1.0 / _psi[nplus_idx];
+      a = 1.0 / psi[nplus_idx];
 
       for (i = 0; i <= nplus_idx; i++)
-	_psi[i] *= a;
+	psi[i] *= a;
 
-      normalize (_psi, nmin, nmax_idx, params);
+      normalize (psi, nmin, nmax_idx, params);
       return SUCCESS;
     }
 
@@ -242,32 +233,32 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
          here. Really, don't move it. */
       if (nplus_idx > nmax_idx - 2)
 	{
-	  _psi[nplus_idx] = 1.0;
-	  _psi[nplus_idx - 1] = -Y (nmax, params) / Z (nmax, params);
+	  psi[nplus_idx] = 1.0;
+	  psi[nplus_idx - 1] = -Y (nmax, params) / Z (nmax, params);
 	  iter_down_start_idx = nplus_idx - 2;
 	}
       else
 	{
-	  _psi[nplus_idx] = 1.0;
+	  psi[nplus_idx] = 1.0;
 	  iter_down_start_idx = nplus_idx - 1;
 	}
 
       for (i = iter_down_start_idx; i >= nminus_idx; i--)
 	{
 	  double nn = nmin + 1.0 + i;	/* n + 1 */
-	  _psi[i] = -(X (nn, params) * _psi[i + 2] +
-		      Y (nn, params) * _psi[i + 1]) / Z (nn, params);
+	  psi[i] = -(X (nn, params) * psi[i + 2] +
+		      Y (nn, params) * psi[i + 1]) / Z (nn, params);
 	}
 
       /* Since we choose nc=nminus, Psi_minus(nc)=1, and we multiply
          Psi_plus(nminus...nmax) by Psi_minus(nc)/Psi_plus(nc) ==
          1/Psi_plus(n_plus) to give us Psi_minus(nminus...nmax). */
-      a = 1.0 / _psi[nminus_idx];
+      a = 1.0 / psi[nminus_idx];
 
       for (i = nmax_idx; i >= nminus_idx; i--)
-	_psi[i] *= a;
+	psi[i] *= a;
 
-      normalize (_psi, nmin, nmax_idx, params);
+      normalize (psi, nmin, nmax_idx, params);
       return SUCCESS;
     }
 
@@ -376,6 +367,7 @@ wigner3j_family_j (const int two_j2, const int two_j3,
 {
   params_3j_j p;
   int a, b;
+  size_t dim;
 
   if ((abs (two_m2) > two_j2) || (abs (two_m3) > two_j3))
     return FAIL;
@@ -390,6 +382,15 @@ wigner3j_family_j (const int two_j2, const int two_j3,
   *two_jmin = a > b ? a : b;
   *two_jmax = two_j2 + two_j3;
 
+  dim = 1 + (*two_jmax - *two_jmin) / 2;
+
+  *family = malloc (dim * sizeof (double));
+  if (*family == NULL)
+    {
+      fprintf (stderr, "%s:%d memory allocation error\n", __FILE__, __LINE__);
+      return FAIL;
+    }
+
   p.two_j2 = two_j2;
   p.two_j3 = two_j3;
   p.two_m2 = two_m2;
@@ -403,7 +404,7 @@ wigner3j_family_j (const int two_j2, const int two_j3,
   p.two_jmin = *two_jmin;
   p.two_jmax = *two_jmax;
 
-  LL98 (family, *two_jmin, *two_jmax, &p, X_3j_j, Y_3j_j, Z_3j_j,
+  LL98 (*family, *two_jmin, *two_jmax, &p, X_3j_j, Y_3j_j, Z_3j_j,
 	normalize_3j_j, single_val_3j_j);
 
   return SUCCESS;
@@ -518,6 +519,7 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 {
   params_3j_m p;
   int a;
+  size_t dim;
 
   if (!is_triangle (two_j1, two_j2, two_j3))
     return FAIL;
@@ -535,6 +537,15 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
   a = two_j3 - two_m1;
   *two_mmax = two_j2 < a ? two_j2 : a;
 
+  dim = 1 + (*two_mmax - *two_mmin) / 2;
+
+  *family = malloc (dim * sizeof (double));
+  if (*family == NULL)
+    {
+      fprintf (stderr, "%s:%d memory allocation error\n", __FILE__, __LINE__);
+      return FAIL;
+    }
+
   p.two_j1 = two_j1;
   p.two_j2 = two_j2;
   p.two_j3 = two_j3;
@@ -548,7 +559,7 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
   p.two_mmin = *two_mmin;
   p.two_mmax = *two_mmax;
 
-  LL98 (family, *two_mmin, *two_mmax, &p, X_3j_m, Y_3j_m, Z_3j_m,
+  LL98 (*family, *two_mmin, *two_mmax, &p, X_3j_m, Y_3j_m, Z_3j_m,
 	normalize_3j_m, single_val_3j_m);
 
   return SUCCESS;
