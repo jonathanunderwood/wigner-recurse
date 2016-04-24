@@ -32,6 +32,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdbool.h>
+
+#define INLINE
 #include "recurse.h"
 
 #define __ODD(n) ((n) & 1)
@@ -362,6 +364,10 @@ single_val_3j_j (const void *params)
     return a;
 }
 
+extern size_t
+wigner3j_family_j_dim (const int two_j2, const int two_j3,
+                       const int two_m2, const int two_m3);
+
 int
 wigner3j_family_j (const int two_j2, const int two_j3,
 		   const int two_m2, const int two_m3,
@@ -384,7 +390,7 @@ wigner3j_family_j (const int two_j2, const int two_j3,
   *two_jmin = __MAX(a, b);
   *two_jmax = two_j2 + two_j3;
 
-  dim = 1 + (*two_jmax - *two_jmin) / 2;
+  dim = wigner3j_family_j_dim (two_j2, two_j3, two_m2, two_m3);
 
   *family = malloc (dim * sizeof (double));
   if (*family == NULL)
@@ -514,6 +520,10 @@ is_triangle (const int two_ja, const int two_jb, const int two_jc)
     return false;
 }
 
+extern size_t
+wigner3j_family_m_dim (const int two_j1, const int two_j2, const int two_j3,
+                       const int two_m1);
+
 int
 wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 		   const int two_m1, double **family, int *two_mmin,
@@ -535,7 +545,7 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
   *two_mmin = __MAX(-two_j2, -two_j3 - two_m1);
   *two_mmax = __MIN(two_j2, two_j3 - two_m1);
 
-  dim = 1 + (*two_mmax - *two_mmin) / 2;
+  dim = wigner3j_family_m_dim (two_j1, two_j2, two_j3, two_m1);
 
   *family = malloc (dim * sizeof (double));
   if (*family == NULL)
