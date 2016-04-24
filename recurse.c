@@ -35,7 +35,7 @@
 #include "recurse.h"
 
 #define __ODD(n) ((n) & 1)
-#define EVEN(n) (!(__ODD(n)))
+#define __EVEN(n) (!(__ODD(n)))
 #define __MAX(a,b) ((a) > (b) ? (a) : (b))
 #define __MIN(a,b) ((a) < (b) ? (a) : (b))
 #define SMALL 1.0e-15
@@ -508,7 +508,7 @@ is_triangle (const int two_ja, const int two_jb, const int two_jc)
    angular momenta. */
 {
   if ((two_jc <= two_ja + two_jb) && (two_jc >= abs (two_ja - two_jb))
-      && (EVEN (two_ja + two_jb + two_jc)))
+      && (__EVEN (two_ja + two_jb + two_jc)))
     return true;
   else
     return false;
@@ -569,7 +569,7 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 
 
 #undef __ODD
-#undef EVEN
+#undef __EVEN
 #undef __MAX
 #undef __MIN
 #undef SMALL
