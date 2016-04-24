@@ -369,15 +369,23 @@ single_val_3j_j (const void *params)
     return a;
 }
 
-void
+int
 wigner3j_family_j (const int two_j2, const int two_j3,
 		   const int two_m2, const int two_m3,
 		   double **family, int *two_jmin, int *two_jmax)
 {
-  // TODO: Add checking for vald inputs!
   params_3j_j p;
-  int a = abs (two_j2 - two_j3);
-  int b = abs (two_m2 + two_m3);
+  int a, b;
+
+  if ((abs (two_m2) > two_j2) || (abs (two_m3) > two_j3))
+    return FAIL;
+
+  /* Check (j,m) pairs are both integer or both half integer */
+  if (ODD (two_m2 + two_j2) || ODD (two_m3 + two_j3))
+    return FAIL;
+
+  a = abs (two_j2 - two_j3);
+  b = abs (two_m2 + two_m3);
 
   *two_jmin = a > b ? a : b;
   *two_jmax = two_j2 + two_j3;
@@ -397,6 +405,8 @@ wigner3j_family_j (const int two_j2, const int two_j3,
 
   LL98 (family, *two_jmin, *two_jmax, &p, X_3j_j, Y_3j_j, Z_3j_j,
 	normalize_3j_j, single_val_3j_j);
+
+  return SUCCESS;
 }
 
 /* End of specifics for 3j calculation by j recurrsion. */
