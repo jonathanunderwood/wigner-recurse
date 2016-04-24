@@ -125,8 +125,14 @@ check_3j_family_j_gsl (const int two_j1, const int two_j2,
   double *a;
   int two_jmin, two_jmax, imax, i;
   int two_m3 = -(two_m1 + two_m2);
+  int ret = wigner3j_family_j (two_j1, two_j2, two_m1, two_m2,
+                               &a, &two_jmin, &two_jmax);
 
-  wigner3j_family_j (two_j1, two_j2, two_m1, two_m2, &a, &two_jmin, &two_jmax);
+  if (ret)
+    {
+      printf("Invalid angular momenta\n");
+      return;
+    }
 
   imax = (two_jmax-two_jmin)/2;
 
