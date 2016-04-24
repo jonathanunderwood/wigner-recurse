@@ -41,7 +41,7 @@
 #define __SMALL 1.0e-15
 
 #define __SUCCESS 0
-#define FAIL 1
+#define __FAILURE 1
 
 static inline int
 LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
@@ -265,7 +265,7 @@ LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
     }
 
   fprintf (stderr, "LL98: Could not iterate in either direction\n");
-  return FAIL;
+  return __FAILURE;
 
 }
 
@@ -372,11 +372,11 @@ wigner3j_family_j (const int two_j2, const int two_j3,
   size_t dim;
 
   if ((abs (two_m2) > two_j2) || (abs (two_m3) > two_j3))
-    return FAIL;
+    return __FAILURE;
 
   /* Check (j,m) pairs are both integer or both half integer */
   if (__ODD (two_m2 + two_j2) || __ODD (two_m3 + two_j3))
-    return FAIL;
+    return __FAILURE;
 
   a = abs (two_j2 - two_j3);
   b = abs (two_m2 + two_m3);
@@ -390,7 +390,7 @@ wigner3j_family_j (const int two_j2, const int two_j3,
   if (*family == NULL)
     {
       fprintf (stderr, "%s:%d memory allocation error\n", __FILE__, __LINE__);
-      return FAIL;
+      return __FAILURE;
     }
 
   p.two_j2 = two_j2;
@@ -523,14 +523,14 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
   size_t dim;
 
   if (!is_triangle (two_j1, two_j2, two_j3))
-    return FAIL;
+    return __FAILURE;
 
   if (abs (two_m1) > two_j1)
-    return FAIL;
+    return __FAILURE;
 
   /* Check j1 and m1 are both integer or both half integer */
   if (__ODD (two_m1 + two_j1))
-    return FAIL;
+    return __FAILURE;
 
   *two_mmin = __MAX(-two_j2, -two_j3 - two_m1);
   *two_mmax = __MIN(two_j2, two_j3 - two_m1);
@@ -541,7 +541,7 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
   if (*family == NULL)
     {
       fprintf (stderr, "%s:%d memory allocation error\n", __FILE__, __LINE__);
-      return FAIL;
+      return __FAILURE;
     }
 
   p.two_j1 = two_j1;
@@ -574,4 +574,4 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 #undef __MIN
 #undef __SMALL
 #undef __SUCCESS
-#undef FAIL
+#undef __FAILURE
