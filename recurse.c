@@ -36,6 +36,8 @@
 
 #define ODD(n) ((n) & 1)
 #define EVEN(n) (!(ODD(n)))
+#define __MAX(a,b) ((a) > (b) ? (a) : (b))
+#define __MIN(a,b) ((a) < (b) ? (a) : (b))
 #define SMALL 1.0e-15
 
 #define SUCCESS 0
@@ -379,7 +381,7 @@ wigner3j_family_j (const int two_j2, const int two_j3,
   a = abs (two_j2 - two_j3);
   b = abs (two_m2 + two_m3);
 
-  *two_jmin = a > b ? a : b;
+  *two_jmin = __MAX(a, b);
   *two_jmax = two_j2 + two_j3;
 
   dim = 1 + (*two_jmax - *two_jmin) / 2;
@@ -518,7 +520,6 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 		   int *two_mmax)
 {
   params_3j_m p;
-  int a;
   size_t dim;
 
   if (!is_triangle (two_j1, two_j2, two_j3))
@@ -531,11 +532,8 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
   if (ODD (two_m1 + two_j1))
     return FAIL;
 
-  a = -two_j3 - two_m1;
-  *two_mmin = -two_j2 > a ? -two_j2 : a;
-
-  a = two_j3 - two_m1;
-  *two_mmax = two_j2 < a ? two_j2 : a;
+  *two_mmin = __MAX(-two_j2, -two_j3 - two_m1);
+  *two_mmax = __MIN(two_j2, two_j3 - two_m1);
 
   dim = 1 + (*two_mmax - *two_mmin) / 2;
 
@@ -571,4 +569,9 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 
 
 #undef ODD
+#undef EVEN
+#undef __MAX
+#undef __MIN
 #undef SMALL
+#undef SUCCESS
+#undef FAIL
