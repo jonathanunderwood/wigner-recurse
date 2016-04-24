@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdbool.h>
 #include "recurse.h"
 
 #define ODD(n) ((n) & 1)
@@ -51,7 +52,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
 {
   int nmax_idx = (two_nmax - two_nmin) / 2;
   int ndim = nmax_idx + 1, nminus_idx = 0, nplus_idx = nmax_idx, i;
-  int iter_up = 1, iter_down = 1;
+  bool iter_up = true, iter_down = true;
   double *_psi;
   double y;
   double nmin = two_nmin / 2.0, nmax = two_nmax / 2.0;
@@ -125,7 +126,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       nminus_idx = 0;
 
       if (fabs (X (nmin, params)) < SMALL)
-	iter_up = 0;
+	iter_up = false;
     }
 
   /* Iterate LL98 Eq. 2 from nmax downwards, unless the first term is undefined. */
@@ -184,7 +185,7 @@ LL98 (double **psi, const int two_nmin, const int two_nmax, void *params,
       nplus_idx = nmax_idx;
 
       if (fabs (Z (nmax, params)) < SMALL)
-	iter_down = 0;
+	iter_down = false;
     }
 
   /* Iterate in the classical region using three term recursion LL98 Eq. 1.  */
