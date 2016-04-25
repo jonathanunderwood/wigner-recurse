@@ -371,7 +371,6 @@ wigner3j_family_j (const int two_j2, const int two_j3,
 {
   params_3j_j p;
   int a, b;
-  size_t dim;
 
   if ((abs (two_m2) > two_j2) || (abs (two_m3) > two_j3))
     return __FAILURE;
@@ -385,15 +384,6 @@ wigner3j_family_j (const int two_j2, const int two_j3,
 
   *two_jmin = __MAX(a, b);
   *two_jmax = two_j2 + two_j3;
-
-  dim = wigner3j_family_j_dim (two_j2, two_j3, two_m2, two_m3);
-
-  *family = malloc (dim * sizeof (double));
-  if (*family == NULL)
-    {
-      fprintf (stderr, "%s:%d memory allocation error\n", __FILE__, __LINE__);
-      return __FAILURE;
-    }
 
   p.two_j2 = two_j2;
   p.two_j3 = two_j3;
@@ -522,7 +512,6 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 		   int *two_mmax)
 {
   params_3j_m p;
-  size_t dim;
 
   if (!is_triangle (two_j1, two_j2, two_j3))
     return __FAILURE;
@@ -536,15 +525,6 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 
   *two_mmin = __MAX(-two_j2, -two_j3 - two_m1);
   *two_mmax = __MIN(two_j2, two_j3 - two_m1);
-
-  dim = wigner3j_family_m_dim (two_j1, two_j2, two_j3, two_m1);
-
-  *family = malloc (dim * sizeof (double));
-  if (*family == NULL)
-    {
-      fprintf (stderr, "%s:%d memory allocation error\n", __FILE__, __LINE__);
-      return __FAILURE;
-    }
 
   p.two_j1 = two_j1;
   p.two_j2 = two_j2;
