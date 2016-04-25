@@ -404,6 +404,61 @@ wigner3j_family_j (const int two_j2, const int two_j3,
   return __SUCCESS;
 }
 
+static inline bool
+is_triangle (const int two_ja, const int two_jb, const int two_jc)
+/* Returns 0 if the triangle condition is met, and the sum of twice
+   the angular momenta is even. Arguments are twice the value of the
+   angular momenta. */
+{
+  if ((two_jc <= two_ja + two_jb) && (two_jc >= abs (two_ja - two_jb))
+      && (__EVEN (two_ja + two_jb + two_jc)))
+    return true;
+  else
+    return false;
+}
+
+double
+wigner3j (const int two_j1, const int two_j2, const int two_j3,
+          const int two_m1, const int two_m2, const int two_m3)
+/* Returns a single Wigner 3J symbol. Computation is done by
+   calculating the family of 3J symbols by J recursion with two_j2 and
+   two_j3 fixed, and returning the symbol corresponding to the
+   specified value of two_j1. In most cases this will require less
+   computation than using M recursion. */
+{
+  int a = abs (two_j2 - two_j3);
+  int b = abs (two_m2 + two_m3);
+  int two_jmin = __MAX(a, b);
+  int two_jmax = two_j2 + two_j3;
+  int dim = 1 + (two_jmax - two_jmin) / 2;
+  double buff[__MAX (dim, 1)]; /* Don't want 0 or negative size here. */
+
+  /* Check that |m| <= j */
+  if ((abs (two_m1) > two_j1) ||
+      (abs (two_m2) > two_j2) ||
+      (abs (two_m3) > two_j3))
+    return NAN;
+
+  /* Check (j,m) pairs are both integer or both half integer */
+  if (__ODD (two_m2 + two_j2) ||
+      __ODD (two_m2 + two_j2) ||
+      __ODD (two_m3 + two_j3))
+    return NAN;
+
+  /* Check for positive j */
+  if (two_j1 < 0 || two_j2 < 0 || two_j3 < 0)
+    return NAN;
+
+  /* And, finally check triangle condition is met */
+  if (!is_triangle (two_j1, two_j2, two_j3))
+    return 0.0;
+
+  wigner3j_family_j (two_j2, two_j3, two_m2, two_m3,
+                     buff, &two_jmin, &two_jmax);
+
+  return buff[(two_j1 - two_jmin) / 2];
+}
+
 /* End of specifics for 3j calculation by j recurrsion. */
 
 
@@ -491,19 +546,6 @@ single_val_3j_m (const void *params)
     return -a;
   else
     return a;
-}
-
-static inline bool
-is_triangle (const int two_ja, const int two_jb, const int two_jc)
-/* Returns 0 if the triangle condition is met, and the sum of twice
-   the angular momenta is even. Arguments are twice the value of the
-   angular momenta. */
-{
-  if ((two_jc <= two_ja + two_jb) && (two_jc >= abs (two_ja - two_jb))
-      && (__EVEN (two_ja + two_jb + two_jc)))
-    return true;
-  else
-    return false;
 }
 
 int

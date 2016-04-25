@@ -29,6 +29,9 @@
 # endif
 #endif
 
+double wigner3j (const int two_j1, const int two_j2, const int two_j3,
+                 const int two_m1, const int two_m2, const int two_m3);
+
 int wigner3j_family_j (const int two_j2, const int two_j3,
                        const int two_m2, const int two_m3,
                        double family[], int *two_jmin, int *two_jmax);
