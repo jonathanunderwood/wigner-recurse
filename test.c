@@ -54,7 +54,7 @@ check_3j_family_j_exact_1 (const int two_jmax)
 	  return __FAILURE;
 	}
 
-      wigner3j_family_j (two_j, two_j, two_j, -two_j, &a, &tjmax, &tjmin);
+      wigner3j_family_j (two_j, two_j, two_j, -two_j, a, &tjmax, &tjmin);
 
       printf ("two_j: %d\trecursive: % .18e\t exact: % .18e\tdiff: % .18e\n",
 	      two_j, a[0], exact, a[0] - exact);
@@ -93,7 +93,7 @@ check_3j_family_j_exact_2 (const int two_jmax)
 	  return __FAILURE;
 	}
 
-      wigner3j_family_j (two_j, two_j, 0, 0, &a, &tjmax, &tjmin);
+      wigner3j_family_j (two_j, two_j, 0, 0, a, &tjmax, &tjmin);
 
       printf ("%d\t%g\t%g\t%g\t%g\t%g\n", two_j, a[0], gsl, exact,
 	      a[0] - exact, gsl - exact);
@@ -126,7 +126,7 @@ hammer_3j_j (const int two_jmax)
 		return __FAILURE;
 	      }
 	    printf ("%d %d %d %d\n", two_j2, two_j3, two_m2, two_m3);
-	    wigner3j_family_j (two_j2, two_j3, two_m2, two_m3, &a, &tjmax,
+	    wigner3j_family_j (two_j2, two_j3, two_m2, two_m3, a, &tjmax,
 			       &tjmin);
 	    free (a);
 	  }
@@ -150,7 +150,7 @@ check_3j_family_j (const int two_j1, const int two_j2,
       return __FAILURE;
     }
 
-  wigner3j_family_j (two_j1, two_j2, two_m1, two_m2, &a, &two_jmin,
+  wigner3j_family_j (two_j1, two_j2, two_m1, two_m2, a, &two_jmin,
 		     &two_jmax);
 
   imax = (two_jmax - two_jmin) / 2;
@@ -188,7 +188,7 @@ check_3j_family_j_gsl (const int two_j1, const int two_j2,
     }
 
   ret = wigner3j_family_j (two_j1, two_j2, two_m1, two_m2,
-			   &a, &two_jmin, &two_jmax);
+			   a, &two_jmin, &two_jmax);
 
   if (ret)
     {
@@ -233,7 +233,7 @@ check_3j_family_m_gsl (const int two_j1, const int two_j2,
       return __FAILURE;
     }
 
-  wigner3j_family_m (two_j1, two_j2, two_j3, two_m1, &a, &two_mmin,
+  wigner3j_family_m (two_j1, two_j2, two_j3, two_m1, a, &two_mmin,
 		     &two_mmax);
 
   imax = (two_mmax - two_mmin) / 2;
@@ -280,9 +280,9 @@ main ()
   //check_3j_family_j_exact_2(10000);
 
 /*   free (a); */
-/*   wigner3j_family_j (2, 2, -2, 2, &a, &two_jmin, &two_jmax); */
+/*   wigner3j_family_j (2, 2, -2, 2, a, &two_jmin, &two_jmax); */
 /*   free (a); */
-/*   wigner3j_family_j (1, 2, -1, 0, &a, &two_jmin, &two_jmax); */
+/*   wigner3j_family_j (1, 2, -1, 0, a, &two_jmin, &two_jmax); */
 
   check_3j_family_m_gsl (1, 1, 2, -1);
   check_3j_family_m_gsl (9, 8, 9, 3);

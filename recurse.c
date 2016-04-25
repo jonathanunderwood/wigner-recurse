@@ -367,7 +367,7 @@ single_val_3j_j (const void *params)
 int
 wigner3j_family_j (const int two_j2, const int two_j3,
 		   const int two_m2, const int two_m3,
-		   double **family, int *two_jmin, int *two_jmax)
+		   double family[], int *two_jmin, int *two_jmax)
 {
   params_3j_j p;
   int a, b;
@@ -398,7 +398,7 @@ wigner3j_family_j (const int two_j2, const int two_j3,
   p.two_jmin = *two_jmin;
   p.two_jmax = *two_jmax;
 
-  LL98 (*family, *two_jmin, *two_jmax, &p, X_3j_j, Y_3j_j, Z_3j_j,
+  LL98 (family, *two_jmin, *two_jmax, &p, X_3j_j, Y_3j_j, Z_3j_j,
 	normalize_3j_j, single_val_3j_j);
 
   return __SUCCESS;
@@ -508,7 +508,7 @@ is_triangle (const int two_ja, const int two_jb, const int two_jc)
 
 int
 wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
-		   const int two_m1, double **family, int *two_mmin,
+		   const int two_m1, double family[], int *two_mmin,
 		   int *two_mmax)
 {
   params_3j_m p;
@@ -539,7 +539,7 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
   p.two_mmin = *two_mmin;
   p.two_mmax = *two_mmax;
 
-  LL98 (*family, *two_mmin, *two_mmax, &p, X_3j_m, Y_3j_m, Z_3j_m,
+  LL98 (family, *two_mmin, *two_mmax, &p, X_3j_m, Y_3j_m, Z_3j_m,
 	normalize_3j_m, single_val_3j_m);
 
   return __SUCCESS;
