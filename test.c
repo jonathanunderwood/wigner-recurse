@@ -8,6 +8,8 @@
 
 #include "recurse.h"
 
+#define __SUCCESS 0
+#define __FAILURE 1
 
 /* void */
 /* gough_test (void) */
@@ -30,7 +32,7 @@
 /*     } */
 /* } */
 
-void
+int
 check_3j_family_j_exact_1 (const int two_jmax)
 {
   int two_j;
@@ -41,6 +43,15 @@ check_3j_family_j_exact_1 (const int two_jmax)
       double gsl = gsl_sf_coupling_3j(two_j, two_j, 0, two_j, -two_j, 0);
       double *a;
       int tjmax, tjmin;
+      size_t dim;
+
+      dim = wigner3j_family_j_dim (two_j, two_j, two_j, -two_j);
+      a = malloc (dim * sizeof (double));
+      if (a == NULL)
+        {
+          fprintf (stderr, "%s:%d memory allocation error\n", __FILE__, __LINE__);
+          return __FAILURE;
+        }
 
       wigner3j_family_j (two_j, two_j, two_j, -two_j, &a, &tjmax, &tjmin);
 
@@ -53,9 +64,11 @@ check_3j_family_j_exact_1 (const int two_jmax)
       
       free (a);
     }
+
+  return __SUCCESS;
 }
 
-void
+int
 check_3j_family_j_exact_2 (const int two_jmax)
 {
   int two_j;
@@ -68,6 +81,15 @@ check_3j_family_j_exact_2 (const int two_jmax)
       double gsl = gsl_sf_coupling_3j(two_j, two_j, 0, 0, 0, 0);
       double *a;
       int tjmax, tjmin;
+      size_t dim;
+
+      dim = wigner3j_family_j_dim (two_j, two_j, 0, 0);
+      a = malloc (dim * sizeof (double));
+      if (a == NULL)
+        {
+          fprintf (stderr, "%s:%d memory allocation error\n", __FILE__, __LINE__);
+          return __FAILURE;
+        }
 
       wigner3j_family_j (two_j, two_j, 0, 0, &a, &tjmax, &tjmin);
 
@@ -76,9 +98,10 @@ check_3j_family_j_exact_2 (const int two_jmax)
       free (a);
     }
 
+  return __SUCCESS;
 }
 
-void
+int
 hammer_3j_j (const int two_jmax)
 {
   double *a;
@@ -89,18 +112,38 @@ hammer_3j_j (const int two_jmax)
       for (two_j3 = 0; two_j3 <= two_jmax; two_j3++)
 	for (two_m3 = -two_j3; two_m3 <=two_j3; two_m3+=2)
 	  {
+            size_t dim;
+
+            dim = wigner3j_family_j_dim (two_j2, two_j3, two_m2, two_m3);
+            a = malloc (dim * sizeof (double));
+            if (a == NULL)
+              {
+                fprintf (stderr, "%s:%d memory allocation error\n", __FILE__, __LINE__);
+                return __FAILURE;
+              }
 	    printf ("%d %d %d %d\n", two_j2, two_j3, two_m2, two_m3);
 	    wigner3j_family_j (two_j2, two_j3, two_m2, two_m3, &a, &tjmax, &tjmin);
 	    free (a);
 	  }
+
+  return __SUCCESS;
 }
 
-void
+int
 check_3j_family_j (const int two_j1, const int two_j2, 
 		   const int two_m1, const int two_m2)
 {
   double *a;
   int two_jmin, two_jmax, imax, i;
+  size_t dim;
+
+  dim = wigner3j_family_j_dim (two_j1, two_j2, two_m1, two_m2);
+  a = malloc (dim * sizeof (double));
+  if (a == NULL)
+    {
+      fprintf (stderr, "%s:%d memory allocation error\n", __FILE__, __LINE__);
+      return __FAILURE;
+    }
 
   wigner3j_family_j (two_j1, two_j2, two_m1, two_m2, &a, &two_jmin, &two_jmax);
 
@@ -116,22 +159,36 @@ check_3j_family_j (const int two_j1, const int two_j2,
     }
 
   free (a);
+
+  return __SUCCESS;
 }
 
-void
+int
 check_3j_family_j_gsl (const int two_j1, const int two_j2, 
 		       const int two_m1, const int two_m2)
 {
   double *a;
   int two_jmin, two_jmax, imax, i;
   int two_m3 = -(two_m1 + two_m2);
-  int ret = wigner3j_family_j (two_j1, two_j2, two_m1, two_m2,
-                               &a, &two_jmin, &two_jmax);
+  int ret;
+  size_t dim;
+
+  dim = wigner3j_family_j_dim (two_j1, two_j2, two_m1, two_m2);
+  a = malloc (dim * sizeof (double));
+  if (a == NULL)
+    {
+      fprintf (stderr, "%s:%d memory allocation error\n", __FILE__, __LINE__);
+      return __FAILURE;
+    }
+
+  ret = wigner3j_family_j (two_j1, two_j2, two_m1, two_m2,
+                           &a, &two_jmin, &two_jmax);
 
   if (ret)
     {
       printf("Invalid angular momenta\n");
-      return;
+      free(a);
+      return __FAILURE;
     }
 
   imax = (two_jmax-two_jmin)/2;
@@ -150,14 +207,25 @@ check_3j_family_j_gsl (const int two_j1, const int two_j2,
     }
 
   free (a);
+
+  return __SUCCESS;
 }
 
-void
+int
 check_3j_family_m_gsl (const int two_j1, const int two_j2,
                        const int two_j3, const int two_m1)
 {
   double *a;
   int two_mmin, two_mmax, imax, i;
+  size_t dim;
+
+  dim = wigner3j_family_m_dim (two_j1, two_j2, two_j3, two_m1);
+  a = malloc (dim * sizeof (double));
+  if (a == NULL)
+    {
+      fprintf (stderr, "%s:%d memory allocation error\n", __FILE__, __LINE__);
+      return __FAILURE;
+    }
 
   wigner3j_family_m (two_j1, two_j2, two_j3, two_m1, &a, &two_mmin, &two_mmax);
 
@@ -176,6 +244,8 @@ check_3j_family_m_gsl (const int two_j1, const int two_j2,
     }
 
   free (a);
+
+  return __SUCCESS;
 }
 
 
