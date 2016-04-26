@@ -507,7 +507,7 @@ normalize_3j_m (double *f, const double mmin, const int mmax_idx,
 		const void *params)
 {
   params_3j_m *p = (params_3j_m *) params;
-  double a = 0.0, phase;
+  double a = 0.0;
   int i;
 
   for (i = 0; i <= mmax_idx; i++)
@@ -517,15 +517,20 @@ normalize_3j_m (double *f, const double mmin, const int mmax_idx,
     }
 
   a *= 2.0 * p->j1 + 1.0;
-  a = 1.0 / sqrt (a);
+  a = 1.0 / sqrt (a); /* Normalization factor */
 
+  /* Change sign of a to give correct sign of f(j_max) - see last row
+     of table 1 in LL98 */
   if (__ODD ((p->two_j2 - p->two_j3 - p->two_m1) / 2))
-    phase = -1.0;
+    {
+      if (f[mmax_idx] > 0)
+        a = -a;
+    }
   else
-    phase = 1.0;
-
-  if ((f[mmax_idx] / phase) < 0)
-    a = -a;
+    {
+      if (f[mmax_idx] < 0)
+        a = -a;
+    }
 
   for (i = 0; i <= mmax_idx; i++)
     f[i] *= a;
