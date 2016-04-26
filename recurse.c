@@ -50,8 +50,7 @@ LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
       double (*X) (const double, const void *),
       double (*Y) (const double, const void *),
       double (*Z) (const double, const void *),
-      void (*normalize) (double *, const double, const int, const void *),
-      double (*single_val) (const void *))
+      void (*normalize) (double *, const double, const int, const void *))
 /* This is the generic LL98 recurssion strategy common to the 3j and 6j
    calculations. */
 {
@@ -64,7 +63,8 @@ LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
 
   if (ndim == 1)		/* Only a single value is possible, requires special handling. */
     {
-      psi[0] = single_val (params);
+      psi[0] = 1.0;
+      normalize (psi, nmin, nmax_idx, params);
       return __SUCCESS;
     }
 
@@ -355,18 +355,6 @@ normalize_3j_j (double *f, const double jmin, const int jmax_idx,
     f[i] *= a;
 }
 
-static inline double
-single_val_3j_j (const void *params)
-{
-  params_3j_j *p = (params_3j_j *) params;
-  double a = 1.0 / sqrt (p->two_jmin + 1.0);
-
-  if (__ODD ((p->two_j2 - p->two_j3 + p->two_m2 + p->two_m3) / 2))
-    return -a;
-  else
-    return a;
-}
-
 int
 wigner3j_family_j (const int two_j2, const int two_j3,
 		   const int two_m2, const int two_m3,
@@ -402,7 +390,7 @@ wigner3j_family_j (const int two_j2, const int two_j3,
   p.two_jmax = *two_jmax;
 
   LL98 (family, *two_jmin, *two_jmax, &p, X_3j_j, Y_3j_j, Z_3j_j,
-	normalize_3j_j, single_val_3j_j);
+	normalize_3j_j);
 
   return __SUCCESS;
 }
@@ -543,18 +531,6 @@ normalize_3j_m (double *f, const double mmin, const int mmax_idx,
     f[i] *= a;
 }
 
-static inline double
-single_val_3j_m (const void *params)
-{
-  params_3j_m *p = (params_3j_m *) params;
-  double a = 1.0 / sqrt (p->two_j1 + 1.0);
-
-  if (__ODD ((p->two_j1 - p->two_m1) / 2))
-    return -a;
-  else
-    return a;
-}
-
 int
 wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
 		   const int two_m1, double family[], int *two_mmin,
@@ -589,7 +565,7 @@ wigner3j_family_m (const int two_j1, const int two_j2, const int two_j3,
   p.two_mmax = *two_mmax;
 
   LL98 (family, *two_mmin, *two_mmax, &p, X_3j_m, Y_3j_m, Z_3j_m,
-	normalize_3j_m, single_val_3j_m);
+	normalize_3j_m);
 
   return __SUCCESS;
 }
