@@ -10,7 +10,7 @@
 
 #define __SUCCESS 0
 #define __FAILURE 1
-
+#define __ODD(n) ((n) & 1)
 /* void */
 /* gough_test (void) */
 /* { */
@@ -102,6 +102,33 @@ check_3j_family_j_exact_2 (const int two_jmax)
     }
 
   return __SUCCESS;
+}
+
+int check_3j_single_gsl (const int two_jmax)
+{
+  int two_j1, two_j2, two_j3, two_m1, two_m2;
+
+  for (two_j1 = 0; two_j1 <= two_jmax; two_j1++)
+    for (two_m1 = -two_j1; two_m1 <= two_j1; two_m1 += 2)
+      for (two_j2 = 0; two_j2 <= two_jmax; two_j2++)
+        for (two_m2 = -two_j2; two_m2 <= two_j2; two_m2 += 2)
+          for (two_j3 = 0; two_j3 <= two_jmax; two_j3++)
+              {
+                int two_m3 = - (two_m1 + two_m2);
+                double gsl;
+                double ans;
+
+                if (__ODD (two_j3 + two_m3))
+                  continue;
+
+                gsl = gsl_sf_coupling_3j (two_j1, two_j2, two_j3, two_m1, two_m2, two_m3);
+                ans = wigner3j (two_j1, two_j2, two_j3, two_m1, two_m2, two_m3);
+
+                printf("two_j1: %d two_j2: %d two_j3: %d two_m1: %d two_m2: %d two_m3: %d\n",
+                       two_j1, two_j2, two_j3, two_m1, two_m2, two_m3);
+                printf("\t%g\t%g\t%g\n", ans, gsl, fabs(ans-gsl));
+              }
+  return 0;
 }
 
 int
@@ -264,6 +291,8 @@ main ()
 
   //hammer_3j_j (2);
 
+  check_3j_family_j_gsl (0, 1, 0, -1);
+  check_3j_family_j_gsl (2, 2, 2, -2);
   check_3j_family_j_gsl (1, 1, -1, 1);
   check_3j_family_j_gsl (9, 1, -1, 1);
   check_3j_family_j_gsl (9, 8, -1, 0);
@@ -289,5 +318,6 @@ main ()
   check_3j_family_m_gsl (90, 80, 90, 10);
   check_3j_family_m_gsl (180, 180, 90, 10);
 
+  check_3j_single_gsl (2);
   return 0;
 }
