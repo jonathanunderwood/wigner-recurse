@@ -512,7 +512,7 @@ normalize_3j_m (double *f, const double mmin, const int mmax_idx,
   for (i = 0; i <= mmax_idx; i++)
     a += f[i] * f[i];
 
-  a *= 2.0 * p->j1 + 1.0;
+  a *= p->two_j1 + 1.0;
   a = 1.0 / sqrt (a); /* Normalization factor */
 
   /* Change sign of a to give correct sign of f(j_max) - see last row
