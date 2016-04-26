@@ -452,6 +452,10 @@ wigner3j (const int two_j1, const int two_j2, const int two_j3,
   if (two_j1 < 0 || two_j2 < 0 || two_j3 < 0)
     return NAN;
 
+  /* Check sum of Ms is 0 */
+  if (two_m1 + two_m2 + two_m3 != 0)
+    return 0.0;
+
   /* And, finally check triangle condition is met */
   if (!is_triangle (two_j1, two_j2, two_j3))
     return 0.0;
