@@ -132,9 +132,7 @@ LL98 (double psi[], const int two_nmin, const int two_nmax, void *params,
     {
       rs[nmax_idx] = -Z (nmax, params) / y;
 
-      for (i = nmax_idx - 1; i >= 0; i--)
-	/* This could also be (i = nmax_idx - 1; i > nminus_idx; i--), but it makes
-	   no difference. */
+      for (i = nmax_idx - 1; i > nminus_idx; i--)
 	{
 	  double n, denom;
 
