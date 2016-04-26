@@ -356,7 +356,7 @@ single_val_3j_j (const void *params)
   params_3j_j *p = (params_3j_j *) params;
   double a = 1.0 / sqrt (p->two_jmin + 1.0);
 
-  if (__ODD ((p->two_jmin + p->two_m2 + p->two_m3) / 2))
+  if (__ODD ((p->two_j2 - p->two_j3 + p->two_m2 + p->two_m3) / 2))
     return -a;
   else
     return a;
