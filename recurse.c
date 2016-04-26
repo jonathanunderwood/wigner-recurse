@@ -511,10 +511,7 @@ normalize_3j_m (double *f, const double mmin, const int mmax_idx,
   int i;
 
   for (i = 0; i <= mmax_idx; i++)
-    {
-      double ff = f[i];
-      a += ff * ff;
-    }
+    a += f[i] * f[i];
 
   a *= 2.0 * p->j1 + 1.0;
   a = 1.0 / sqrt (a); /* Normalization factor */
